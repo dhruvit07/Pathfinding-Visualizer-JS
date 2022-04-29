@@ -1,0 +1,90 @@
+/* Default Setting */
+
+*{
+    font-family: "Lato", Helvetica, Arial, sans-serif;
+    font-size: 18px;
+    line-height: 1.72222;
+}
+
+/* main grid comment */
+
+#mainGrid{
+    z-index: 1;
+}
+#board{
+    
+    position : absolute;
+    bottom : 0px;
+    margin : 10px;
+    border-collapse: collapse;
+}
+#board td{
+    border: 1px solid rgb(175, 216, 248);
+    width: 25px;
+    height: 25px;
+}
+
+.unvisited{
+    border: 1px solid rgb(175, 216, 248);
+    background-color:white
+  }
+
+  #algorithmDescriptor {
+
+    
+    text-align: center;
+    color: #34495e;
+    padding: 15px 25px 15px 25px;
+  }
+
+  .start{
+    /*border: 1px solid rgb(175, 216, 248);*/
+    background-image:url(img/triangletwo-right.svg);
+    /*background-color: rgb(255, 254, 106);*/
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: contain;
+    animation-name: specialNodes;
+    animation-duration: 2.0s;
+    animation-timing-function: ease-out;
+    animation-delay: 0;
+    animation-direction: alternate;
+    animation-iteration-count: 1;
+    animation-fill-mode: forwards;
+    animation-play-state: running;
+  }
+
+  .target{
+    /*border: 1px solid rgb(175, 216, 248);*/
+    background-image: url(img/circle.svg);
+    /*background-color: rgb(255, 254, 106);*/
+    /*background-color: rgba(232, 147, 12, 0.75);*/
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: contain;
+    animation-name: specialNodes;
+    animation-duration: 2.0s;
+    animation-timing-function: ease-out;
+    animation-delay: 0;
+    animation-direction: alternate;
+    animation-iteration-count: 1;
+    animation-fill-mode: forwards;
+    animation-play-state: running;
+  }
+
+  @keyframes specialNodes {
+    0% {
+      transform: scale(.3);
+      background-color: darkslategrey;
+    }
+  
+    50% {
+      transform: scale(1.2);
+      /* background-color: darkslategrey; */
+    }
+  
+    100% {
+      transform: scale(1.0);
+      /* background-color: darkslategrey; */
+    }
+  }
