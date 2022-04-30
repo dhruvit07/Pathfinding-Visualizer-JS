@@ -3,9 +3,11 @@ import unweightedSearchAlgorithm from "../Algorithms/unweightedSearchAlgorithm.j
 export default function launchAnimations(board, success, type, object, algorithm, heuristic) {
   let nodes = object ? board.objectNodesToAnimate.slice(0) : board.nodesToAnimate.slice(0);
   let speed = 25;
+  let time = 0;
   let shortestNodes;
   function timeout(index) {
     window.setTimeout(function () {
+
       if (index === nodes.length) {
         if (object) {
           board.objectNodesToAnimate = [];
@@ -75,8 +77,10 @@ export default function launchAnimations(board, success, type, object, algorithm
       } else {
         change(nodes[index], nodes[index - 1]);
       }
+      time+=speed;
       timeout(index + 1);
     }, speed);
+    document.getElementById("Time").innerHTML = '<a href="#"> Time : '+ time/1000 +' second</a>';
   }
 
   function change(currentNode, previousNode, bidirectional) {
