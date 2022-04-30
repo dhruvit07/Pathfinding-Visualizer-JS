@@ -43,8 +43,8 @@ export default function Board(height, width) {
 Board.prototype.initialize = function () {
     this.getGrid();
     this.addEventListeners();
-    recursiveDivisionMaze(this, 2, this.height - 3, 2, this.width - 3, "vertical", false, "wall");
-    mazeGenerationAnimations(this);
+    // recursiveDivisionMaze(this, 2, this.height - 3, 2, this.width - 3, "vectical", false,"wall");
+    // mazeGenerationAnimations(this);
 };
 
 Board.prototype.createMazeOne = function(type) {
@@ -115,6 +115,18 @@ Board.prototype.addEventListeners = function () {
             let currentId = `${r}-${c}`;
             let currentNode = board.getNode(currentId);
             let currentElement = document.getElementById(currentId);
+           
+            currentElement.addEventListener("dblclick", function(){
+                
+
+                if (board.pressedNodeType === "object") {
+                    console.log("Hello");
+                    let noe = document.getElementById(currentId);
+                    noe.className = "unvisited";
+                    currentNode.nodeType = "normal";
+                    board.numberOfObjects = 0;
+                }
+            });
             currentElement.onmousedown = (e) => {
                 e.preventDefault();
                 board.mouseDown = true;
@@ -134,8 +146,9 @@ Board.prototype.addEventListeners = function () {
                 } else if (board.pressedNodeStatus === "object") {
                     board.object = currentId;
                 }
+                else{
                 board.pressedNodeType = "normal";
-
+                }
             }
             currentElement.onmouseenter = () => {
                 if (board.mouseDown && board.pressedNodeType !== "normal") {
@@ -158,6 +171,9 @@ Board.prototype.addEventListeners = function () {
                     board.changeSpecialNode(currentNode);
                 }
             }
+
+            
+        
         }
     }
 };
@@ -222,7 +238,7 @@ Board.prototype.reset = function(objectNotTransparent) {
       if (objectNotTransparent) {
         document.getElementById(this.object).className = "visitedObjectNode";
       } else {
-        document.getElementById(this.object).className = "objectTransparent";
+        // document.getElementById(this.object).className = "objectTransparent";
       }
     }
   };

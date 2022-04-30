@@ -6,7 +6,6 @@ export default function launchAnimations(board, success, type, object, algorithm
   let shortestNodes;
   function timeout(index) {
     window.setTimeout(function () {
-      console.log("hellow");
       if (index === nodes.length) {
         if (object) {
           board.objectNodesToAnimate = [];
@@ -107,7 +106,6 @@ export default function launchAnimations(board, success, type, object, algorithm
   }
 
   function shortestPathTimeout(index) {
-      console.log("here");
     setTimeout(function () {
       if (index === shortestNodes.length){
         board.reset();

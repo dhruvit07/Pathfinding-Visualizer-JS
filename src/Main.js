@@ -18,20 +18,21 @@ let weightButton = document.getElementById("weight_button");
 
 weightButton.addEventListener("click",function(){
 
+    if(board.object===null)
+    {
     let newNodeId = `${0}-${0}`;
         board.object = `${newNodeId}`;
-        board.numberOfObjects = 1;
+        board.numberOfObjects+= 1;
         let noe = document.getElementById(newNodeId);
         noe.className = "object";
         board.nodeArray[0][0].nodeType = "object";
-
+    }
     if(board.drawWall === false){
         board.drawWall=true;
     }
     else{
         board.drawWall = false;
     }
-    console.log(board.drawWall);
 });
 
 let visualizeButton = document.getElementById("algorithmDescriptor");

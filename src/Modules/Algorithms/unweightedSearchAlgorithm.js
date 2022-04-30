@@ -8,7 +8,7 @@ export default function unweightedSearchAlgorithm(nodes, start, target, nodesToA
       let currentNode = name === "bfs" ? structure.shift() : structure.pop();
       nodesToAnimate.push(currentNode);
       if (name === "dfs") exploredNodes[currentNode.id] = true;
-      currentNode.status = "visited";
+      currentNode.nodeType = "visited";
       if (currentNode.id === target) {
         return "success";
       }
@@ -32,7 +32,7 @@ export default function unweightedSearchAlgorithm(nodes, start, target, nodesToA
     let potentialNeighbor;
     if (boardArray[x - 1] && boardArray[x - 1][y]) {
       potentialNeighbor = `${(x - 1).toString()}-${y.toString()}`
-      if (nodes[potentialNeighbor].status !== "wall") {
+      if (nodes[potentialNeighbor].nodeType !== "wall") {
         if (name === "bfs") {
           neighbors.push(potentialNeighbor);
         } else {
@@ -42,7 +42,7 @@ export default function unweightedSearchAlgorithm(nodes, start, target, nodesToA
     }
     if (boardArray[x][y + 1]) {
       potentialNeighbor = `${x.toString()}-${(y + 1).toString()}`
-      if (nodes[potentialNeighbor].status !== "wall") {
+      if (nodes[potentialNeighbor].nodeType !== "wall") {
         if (name === "bfs") {
           neighbors.push(potentialNeighbor);
         } else {
@@ -52,7 +52,7 @@ export default function unweightedSearchAlgorithm(nodes, start, target, nodesToA
     }
     if (boardArray[x + 1] && boardArray[x + 1][y]) {
       potentialNeighbor = `${(x + 1).toString()}-${y.toString()}`
-      if (nodes[potentialNeighbor].status !== "wall") {
+      if (nodes[potentialNeighbor].nodeType !== "wall") {
         if (name === "bfs") {
           neighbors.push(potentialNeighbor);
         } else {
@@ -62,7 +62,7 @@ export default function unweightedSearchAlgorithm(nodes, start, target, nodesToA
     }
     if (boardArray[x][y - 1]) {
       potentialNeighbor = `${x.toString()}-${(y - 1).toString()}`
-      if (nodes[potentialNeighbor].status !== "wall") {
+      if (nodes[potentialNeighbor].nodeType !== "wall") {
         if (name === "bfs") {
           neighbors.push(potentialNeighbor);
         } else {
