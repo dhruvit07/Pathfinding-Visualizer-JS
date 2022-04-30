@@ -60,6 +60,9 @@
     animation-fill-mode: forwards;
     animation-play-state: running;
   }
+  .wall{
+    background-color: black;
+  }
 
   .target{
     /*border: 1px solid rgb(175, 216, 248);*/
@@ -81,8 +84,8 @@
 
   @keyframes specialNodes {
     0% {
-      transform: scale(.3);
-      background-color: darkslategrey;
+      transform: scale(.8);
+      /* background-color: darkslategrey; */
     }
   
     50% {
