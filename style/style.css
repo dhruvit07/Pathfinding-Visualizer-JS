@@ -554,6 +554,7 @@
   
   .shortest-path.weight{
     /*border: 1px solid rgb(175, 216, 248);*/
+    background-color: wheat;
     background-image: url(img/weight.svg);
     background-position: center;
     background-repeat: no-repeat;
