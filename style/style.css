@@ -155,6 +155,7 @@
   
     100% {
       transform: scale(1);
+    background-color:rgb(12, 53, 71);
       
     }
   }
@@ -177,30 +178,31 @@
  
   .visited{
     border: 1px solid rgb(175, 216, 248);
-    animation-name: visitedAnimation;
+    /* animation-name: visitedAnimation;
     animation-duration: 1.5s;
     animation-timing-function: ease-out;
     animation-delay: 0;
     animation-direction: alternate;
     animation-iteration-count: 1;
     animation-fill-mode: forwards;
-    animation-play-state: running;
+    animation-play-state: running; */
   }
   
   visited.weight{
     border: 1px solid rgb(175, 216, 248);
+    background-color: white !important;
     background-image: url(img/weight.svg);
     background-position: center;
     background-repeat: no-repeat;
     background-size: contain;
-    animation-name: visitedAnimation;
+    /* animation-name: visitedAnimation;
     animation-duration: 1.5s;
     animation-timing-function: ease-out;
     animation-delay: 0;
     animation-direction: alternate;
     animation-iteration-count: 1;
     animation-fill-mode: forwards;
-    animation-play-state: running;
+    animation-play-state: running; */
   }
   
   @keyframes visitedAnimation {
@@ -257,6 +259,7 @@
   100% {
     transform: scale(1.0);
     background-color: rgba(123, 67, 255, 0.75);
+    bac
   }
 }
   .startTransparent{
@@ -559,14 +562,14 @@
     background-position: center;
     background-repeat: no-repeat;
     background-size: contain;
-    animation-name: triangletwo;
+    /* animation-name: triangletwo;
     animation-duration: 1.5s;
     animation-timing-function: linear;
     animation-delay: 0;
     animation-direction: alternate;
     animation-iteration-count: 1;
     animation-fill-mode: forwards;
-    animation-play-state: running;
+    animation-play-state: running; */
   }
   
   @keyframes triangletwo {
@@ -631,8 +634,8 @@
   }
 
   .instantvisitedobject.weight{
-    border: 1px solid rgb(175, 216, 248);
-    background-color: rgba(178, 67, 255, 0.75);
+    /* border: 1px solid rgb(175, 216, 248);
+    background-color: rgba(178, 67, 255, 0.75); */
     /*background-color: rgba(0, 190, 218, 0.75);*/
     background-image: url(img/weight.svg);
     background-position: center;
