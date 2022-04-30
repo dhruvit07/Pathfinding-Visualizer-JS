@@ -31,7 +31,7 @@ export default function Board(height, width) {
     this.nodesToAnimate = [];
     this.speed = "fast";
     this.currentAlgorithm = "dijkstra";
-    this.currentHeuristic = "manhattanDistance";
+    this.currentHeuristic = null;
     this.numberOfObjects = 0;
     this.isObject = false;
     this.buttonsOn = false;
@@ -43,8 +43,8 @@ export default function Board(height, width) {
 Board.prototype.initialize = function () {
     this.getGrid();
     this.addEventListeners();
-    // recursiveDivisionMaze(this, 2, this.height - 3, 2, this.width - 3, "vertical", false, "wall");
-    // mazeGenerationAnimations(this);
+    recursiveDivisionMaze(this, 2, this.height - 3, 2, this.width - 3, "vertical", false, "wall");
+    mazeGenerationAnimations(this);
 };
 
 Board.prototype.createMazeOne = function(type) {
@@ -77,12 +77,11 @@ Board.prototype.getGrid = function () {
                 newNodeClass,
                 newNode;
                 
-            if (r === Math.floor(this.height / 2) && c === (Math.floor(this.width / 4))) {
+            if (r === Math.floor(this.height / 2) && c === (Math.floor(1.5 *(this.width / 4)))) {
                 this.start = `${newNodeId}`;
-
                 newNodeClass = "start";
             }
-            else if (r === Math.floor(this.height / 2) && c === (Math.floor(3 * (this.width / 4)))) {
+            else if (r === Math.floor(this.height / 2) && c === (Math.floor(2.5 * (this.width / 4)))) {
                 newNodeClass = "target";
                 this.target = `${newNodeId}`;
 
@@ -91,13 +90,7 @@ Board.prototype.getGrid = function () {
                 newNodeClass = "unvisited";
 
             }
-            if(r==0 && c==0){
-                this.object = `${newNodeId}`;
-
-                newNodeClass="object";
-                this.numberOfObjects = 1;
-
-            }
+            
             newNode = new Node(newNodeId, newNodeClass);
             boardRowArray.push(newNode);
             boardHTMLRow += `<td id="${newNodeId}" class="${newNodeClass}"></td>`;

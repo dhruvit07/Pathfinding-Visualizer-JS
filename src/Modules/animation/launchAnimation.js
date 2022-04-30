@@ -1,12 +1,12 @@
 import weightedSearchAlgorithm from "../Algorithms/Dijkstra.js";
-// const unweightedSearchAlgorithm = require("../pathfindingAlgorithms/unweightedSearchAlgorithm");
-
+import unweightedSearchAlgorithm from "../Algorithms/unweightedSearchAlgorithm.js";
 export default function launchAnimations(board, success, type, object, algorithm, heuristic) {
   let nodes = object ? board.objectNodesToAnimate.slice(0) : board.nodesToAnimate.slice(0);
-  let speed = 0;
+  let speed = 10;
   let shortestNodes;
   function timeout(index) {
-    setTimeout(function () {
+    window.setTimeout(function () {
+      console.log("hellow");
       if (index === nodes.length) {
         if (object) {
           board.objectNodesToAnimate = [];
@@ -27,7 +27,7 @@ export default function launchAnimations(board, success, type, object, algorithm
             launchAnimations(board, newSuccess, type);
             return;
           } else {
-            console.log("Failure.");
+            window.alert("No Path Found");
             board.reset();
             board.toggleButtons();
             return;
@@ -53,7 +53,7 @@ export default function launchAnimations(board, success, type, object, algorithm
             shortestNodes = board.objectShortestPathNodesToAnimate.concat(board.shortestPathNodesToAnimate);
             return;
           } else {
-            console.log("Failure.");
+            window.alert("No Path Found");
             board.reset();
             board.toggleButtons();
             return;
@@ -77,7 +77,7 @@ export default function launchAnimations(board, success, type, object, algorithm
         change(nodes[index], nodes[index - 1]);
       }
       timeout(index + 1);
-    }, speed);
+    }, 1);
   }
 
   function change(currentNode, previousNode, bidirectional) {
