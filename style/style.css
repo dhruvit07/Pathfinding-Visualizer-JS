@@ -60,7 +60,7 @@
     background-repeat: no-repeat;
     background-size: contain;
     animation-name: specialNodes;
-    animation-duration: 1.0s;
+    animation-duration: 2.0s;
     animation-timing-function: ease-out;
     animation-delay: 0;
     animation-direction: alternate;
@@ -75,7 +75,7 @@
     background-repeat: no-repeat;
     background-size: contain;
     animation-name: specialNodes;
-    animation-duration: 1.0s;
+    animation-duration: 2.0s;
     animation-timing-function: ease-out;
     animation-delay: 0;
     animation-direction: alternate;
@@ -166,7 +166,7 @@
     background-repeat: no-repeat;
     background-size: contain;
     animation-name: specialNodes;
-    animation-duration: 1.0s;
+    animation-duration: 2.0s;
     animation-timing-function: ease-out;
     animation-delay: 0;
     animation-direction: alternate;
@@ -178,14 +178,14 @@
  
   .visited{
     border: 1px solid rgb(175, 216, 248);
-    /* animation-name: visitedAnimation;
+    animation-name: visitedAnimation;
     animation-duration: 1.5s;
     animation-timing-function: ease-out;
     animation-delay: 0;
     animation-direction: alternate;
     animation-iteration-count: 1;
     animation-fill-mode: forwards;
-    animation-play-state: running; */
+    animation-play-state: running;
   }
   
   visited.weight{
@@ -195,14 +195,14 @@
     background-position: center;
     background-repeat: no-repeat;
     background-size: contain;
-    /* animation-name: visitedAnimation;
+    animation-name: visitedAnimation;
     animation-duration: 1.5s;
     animation-timing-function: ease-out;
     animation-delay: 0;
     animation-direction: alternate;
     animation-iteration-count: 1;
     animation-fill-mode: forwards;
-    animation-play-state: running; */
+    animation-play-state: running;
   }
   
   @keyframes visitedAnimation {
@@ -259,7 +259,6 @@
   100% {
     transform: scale(1.0);
     background-color: rgba(123, 67, 255, 0.75);
-    bac
   }
 }
   .startTransparent{
@@ -271,7 +270,7 @@
     background-repeat: no-repeat;
     background-size: contain;
     animation-name: specialNodes;
-    animation-duration: 1.0s;
+    animation-duration: 2.0s;
     animation-timing-function: ease-out;
     animation-delay: 0;
     animation-direction: alternate;
@@ -288,7 +287,7 @@
     background-repeat: no-repeat;
     background-size: contain;
     animation-name: visitedStartNodeBlueAnimation;
-    animation-duration: 1.0s;
+    animation-duration: 2.0s;
     animation-timing-function: ease-out;
     animation-delay: 0;
     animation-direction: alternate;
@@ -305,7 +304,7 @@
     background-repeat: no-repeat;
     background-size: contain;
     animation-name: visitedStartNodePurpleAnimation;
-    animation-duration: 1.0s;
+    animation-duration: 2.0s;
     animation-timing-function: ease-out;
     animation-delay: 0;
     animation-direction: alternate;
@@ -320,7 +319,7 @@
     background-repeat: no-repeat;
     background-size: contain;
     animation-name: visitedStartNodeBlueAnimation;
-    animation-duration: 1.0s;
+    animation-duration: 2.0s;
     animation-timing-function: ease-out;
     animation-delay: 0;
     animation-direction: alternate;
@@ -335,7 +334,7 @@
     background-repeat: no-repeat;
     background-size: contain;
     animation-name: visitedStartNodeBlueAnimation;
-    animation-duration: 1.0s;
+    animation-duration: 2.0s;
     animation-timing-function: ease-out;
     animation-delay: 0;
     animation-direction: alternate;
@@ -350,7 +349,7 @@
     background-repeat: no-repeat;
     background-size: contain;
     animation-name: visitedStartNodePurpleAnimation;
-    animation-duration: 1.0s;
+    animation-duration: 2.0s;
     animation-timing-function: ease-out;
     animation-delay: 0;
     animation-direction: alternate;
@@ -530,7 +529,7 @@
     background-repeat: no-repeat;
     background-size: contain;
     animation-name: specialNodes;
-    animation-duration: 1.0s;
+    animation-duration: 2.0s;
     animation-timing-function: ease-out;
     animation-delay: 0;
     animation-direction: alternate;
@@ -562,14 +561,14 @@
     background-position: center;
     background-repeat: no-repeat;
     background-size: contain;
-    /* animation-name: triangletwo;
+    animation-name: triangletwo;
     animation-duration: 1.5s;
     animation-timing-function: linear;
     animation-delay: 0;
     animation-direction: alternate;
     animation-iteration-count: 1;
     animation-fill-mode: forwards;
-    animation-play-state: running; */
+    animation-play-state: running;
   }
   
   @keyframes triangletwo {
@@ -641,4 +640,75 @@
     background-position: center;
     background-repeat: no-repeat;
     background-size: contain;
+  }
+
+  .navbar{
+    border-radius: 0;
+    margin-bottom: 8px;
+  }
+
+
+  
+  #mainText div {
+    /*border: 1px solid rgb(12, 53, 71);*/
+    width: 25px;
+    height: 25px;
+    display: inline-block;
+    position: relative;
+    top: 0.35em;
+    margin: 0 0.42em;
+  }
+  #mainText > ul li {
+    display: inline-block;
+    list-style: none;
+    padding: 0 25px 0 0;
+  }
+
+  .start{
+    /*border: 1px solid rgb(175, 216, 248);*/
+    background-image:url(img/triangletwo-right.png);
+    /*background-color: rgb(255, 254, 106);*/
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: contain;
+    animation-name: specialNodes;
+    animation-duration: 2.0s;
+    animation-timing-function: ease-out;
+    animation-delay: 0;
+    animation-direction: alternate;
+    animation-iteration-count: 1;
+    animation-fill-mode: forwards;
+    animation-play-state: running;
+  }
+
+  .borderlessWeight {
+    background-color: rgb(12, 53, 71);
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: contain;
+    animation-name: unvisitedWeightAnimation;
+    animation-duration: 0.3s;
+    animation-timing-function: ease-out;
+    animation-delay: 0;
+    animation-direction: alternate;
+    animation-iteration-count: 1;
+    animation-fill-mode: forwards;
+    animation-play-state: running;
+  }
+
+  @keyframes unvisitedWeightAnimation {
+    0% {
+      transform: scale(.3);
+      /*background-color: rgb(12, 53, 71);*/
+    }
+  
+    50% {
+      transform: scale(1.2);
+      /*background-color: rgb(12, 53, 71);*/
+    }
+  
+    100% {
+      transform: scale(1.0);
+      /*background-color: rgb(12, 53, 71);*/
+    }
   }

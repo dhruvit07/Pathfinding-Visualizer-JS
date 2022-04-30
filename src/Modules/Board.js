@@ -30,7 +30,7 @@ export default function Board(height, width) {
     this.wallsToAnimate = [];
     this.nodesToAnimate = [];
     this.speed = "fast";
-    this.currentAlgorithm = "dijkstra";
+    this.currentAlgorithm = "";
     this.currentHeuristic = null;
     this.numberOfObjects = 0;
     this.isObject = false;
@@ -43,8 +43,7 @@ export default function Board(height, width) {
 Board.prototype.initialize = function () {
     this.getGrid();
     this.addEventListeners();
-    // recursiveDivisionMaze(this, 2, this.height - 3, 2, this.width - 3, "vectical", false,"wall");
-    // mazeGenerationAnimations(this);
+    
 };
 
 Board.prototype.createMazeOne = function(type) {
@@ -52,7 +51,7 @@ Board.prototype.createMazeOne = function(type) {
       let random = Math.random();
       let currentHTMLNode = document.getElementById(node);
       let relevantClassNames = ["start", "target","object"]
-      let randomTwo = type === "wall" ? 0.1 : 0.2;
+      let randomTwo = type === "wall" ? 0.25 : 0.35;
       if (random < randomTwo && !relevantClassNames.includes(currentHTMLNode.className)) {
         if (type === "wall") {
           currentHTMLNode.className = "wall";

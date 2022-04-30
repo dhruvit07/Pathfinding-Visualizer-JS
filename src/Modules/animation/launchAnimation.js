@@ -2,7 +2,7 @@ import weightedSearchAlgorithm from "../Algorithms/Dijkstra.js";
 import unweightedSearchAlgorithm from "../Algorithms/unweightedSearchAlgorithm.js";
 export default function launchAnimations(board, success, type, object, algorithm, heuristic) {
   let nodes = object ? board.objectNodesToAnimate.slice(0) : board.nodesToAnimate.slice(0);
-  let speed = 10;
+  let speed = 25;
   let shortestNodes;
   function timeout(index) {
     window.setTimeout(function () {
@@ -76,7 +76,7 @@ export default function launchAnimations(board, success, type, object, algorithm
         change(nodes[index], nodes[index - 1]);
       }
       timeout(index + 1);
-    }, 1);
+    }, speed);
   }
 
   function change(currentNode, previousNode, bidirectional) {
