@@ -9,10 +9,10 @@
 /* main grid comment */
 
 #mainGrid{
+  width: 100%;
     z-index: 1;
 }
 #board{
-    
     position : absolute;
     bottom : 0px;
     margin : 10px;
@@ -30,11 +30,18 @@
   }
 
   #algorithmDescriptor {
-
-    
     text-align: center;
-    color: #34495e;
-    padding: 15px 25px 15px 25px;
+    color:aliceblue;
+    padding: 15px 20px 15px 20px;
+    border-radius: 3px;
+    background-color:darkcyan;
+    margin: auto;
+    width: 100px;
+    height: 25px;
+  }
+  #algorithmDescriptor:hover{
+    background-color:yellow;
+    color: black;
   }
 
   .start{

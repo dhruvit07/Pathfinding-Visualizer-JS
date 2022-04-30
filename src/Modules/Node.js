@@ -1,11 +1,13 @@
-export default function Node(id, status) {
+export default function Node(id, nodeType) {
   this.id = id;
-  this.status = status;
-//   this.previousNode = null;
+  this.nodeType = nodeType;
+  this.distance = Infinity;
+  this.previousNode = null;
+  this.isVisited = false;
 //   this.path = null;
 //   this.direction = null;
 //   this.storedDirection = null;
-//   this.distance = Infinity;
+  
 //   this.totalDistance = Infinity;
 //   this.heuristicDistance = null;
 //   this.weight = 0;
