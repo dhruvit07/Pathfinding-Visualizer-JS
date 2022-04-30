@@ -4,6 +4,7 @@ export default function Node(id, nodeType) {
   this.distance = Infinity;
   this.previousNode = null;
   this.isVisited = false;
+  this.weight = 0;
 //   this.path = null;
 //   this.direction = null;
 //   this.storedDirection = null;

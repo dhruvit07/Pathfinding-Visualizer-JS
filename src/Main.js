@@ -7,7 +7,7 @@ let board = new Board(height, width);
 board.initialize();
 
 let visualizeButton = document.getElementById("algorithmDescriptor");
-let weightButton = document.getElementById("weight");
+let weightButton = document.getElementById("weight_button");
 
 weightButton.addEventListener("click",function(){
 

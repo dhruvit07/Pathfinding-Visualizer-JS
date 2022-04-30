@@ -1,5 +1,7 @@
 import Node from "./Node.js";
 import visualizeDijkstra from "./Algorithms/Dijkstra.js";
+import recursiveDivisionMaze from "./Maze/recursiveMaze.js";
+import mazeGenerationAnimations from "./animation/mazeGenerationAnimation.js";
 
 
 var boardElement = document.getElementById("board");
@@ -18,12 +20,37 @@ export default function Board(height, width) {
     this.previouslyPressedNodeStatus = null;
     this.previouslySwitchedNode = null;
     this.drawWall = true;
+    this.wallsToAnimate = [];
+    this.speed = "fast";
+
 }
 
 Board.prototype.initialize = function () {
     this.getGrid();
     this.addEventListeners();
+    recursiveDivisionMaze(this, 2, this.height - 3, 2, this.width - 3, "horizontal", false, "wall");
+    mazeGenerationAnimations(this);
 };
+
+Board.prototype.createMazeOne = function(type) {
+    Object.keys(this.nodes).forEach(node => {
+      let random = Math.random();
+      let currentHTMLNode = document.getElementById(node);
+      let relevantClassNames = ["start", "target","object"]
+      let randomTwo = type === "wall" ? 0.1 : 0.2;
+      if (random < randomTwo && !relevantClassNames.includes(currentHTMLNode.className)) {
+        if (type === "wall") {
+          currentHTMLNode.className = "wall";
+          this.nodes[node].nodeType = "wall";
+          this.nodes[node].weight = 0;
+        } else if (type === "weight") {
+          currentHTMLNode.className = "unvisited weight";
+          this.nodes[node].nodeType = "unvisited ";
+          this.nodes[node].weight = 15;
+        }
+      }
+    });
+  };
 
 Board.prototype.getGrid = function () {
     let boardHTML = "";
@@ -34,6 +61,7 @@ Board.prototype.getGrid = function () {
             let newNodeId = `${r}-${c}`,
                 newNodeClass,
                 newNode;
+                
             if (r === Math.floor(this.height / 2) && c === (Math.floor(this.width / 4))) {
                 newNodeClass = "start";
             }
@@ -42,6 +70,9 @@ Board.prototype.getGrid = function () {
             }
             else {
                 newNodeClass = "unvisited";
+            }
+            if(r==0 && c==0){
+                newNodeClass="object";
             }
             newNode = new Node(newNodeId, newNodeClass);
             boardRowArray.push(newNode);
@@ -70,7 +101,7 @@ Board.prototype.addEventListeners = function () {
             currentElement.onmousedown = (e) => {
                 e.preventDefault();
                 board.mouseDown = true;
-                if (currentNode.nodeType === "start" || currentNode.nodeType === "target") {
+                if (currentNode.nodeType === "start" || currentNode.nodeType === "target" || currentNode.nodeType === "object" ) {
                     board.pressedNodeType = currentNode.nodeType;
                 } else {
                     board.pressedNodeType = "normal";
@@ -83,7 +114,9 @@ Board.prototype.addEventListeners = function () {
                     board.target = currentId;
                 } else if (board.pressedNodeType === "start") {
                     board.start = currentId;
-                } 
+                } else if (board.pressedNodeStatus === "object") {
+                    board.object = currentId;
+                }
                 board.pressedNodeType = "normal";
 
             }
@@ -92,10 +125,10 @@ Board.prototype.addEventListeners = function () {
                     board.changeSpecialNode(currentNode);
                     if (board.pressedNodeType === "target") {
                         board.target = currentId;
-                        
+
                     } else if (board.pressedNodeType === "start") {
                         board.start = currentId;
-                       
+
                     } else if (board.pressedNodeType === "object") {
                         board.object = currentId;
                     }
@@ -111,6 +144,9 @@ Board.prototype.addEventListeners = function () {
         }
     }
 };
+
+
+
 
 Board.prototype.changeSpecialNode = function (currentNode) {
     let element = document.getElementById(currentNode.id), previousElement;
@@ -144,25 +180,23 @@ Board.prototype.changeSpecialNode = function (currentNode) {
 Board.prototype.toggleNormalNodeToWall = function (currentNode) {
     let board = this;
     let element = document.getElementById(currentNode.id);
-    let relevantStatuses = ["start", "target"];
-    
-        if (!relevantStatuses.includes(currentNode.nodeType)) {
-            if(board.drawWall)
-            {
+    let relevantStatuses = ["start", "target","object"];
+
+    if (!relevantStatuses.includes(currentNode.nodeType)) {
+        if (board.drawWall) {
             element.className = currentNode.nodeType !== "wall" ?
                 "wall" : "unvisited";
             currentNode.nodeType = element.className !== "wall" ?
                 "unvisited" : "wall";
             currentNode.weight = 0;
-            }
-            else{
-                element.className = currentNode.nodeType !== "object" ?
-                "object" : "unvisited";
-            currentNode.nodeType = element.className !== "object" ?
-                "object" : "wall";
-            currentNode.weight = 0;
-            }
         }
+        else {
+            element.className = currentNode.weight !== 15 ?
+                "unvisited weight" : "unvisited";
+            currentNode.weight = element.className !== "unvisited weight" ?
+                0 : 15;     
+        }
+    }
 };
 
 

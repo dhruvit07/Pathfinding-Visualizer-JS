@@ -41,7 +41,7 @@
     height: 25px;
   }
 
-  #weight{
+  #weight_button{
     position: absolute;
     text-align: center;
     color:black;
@@ -126,6 +126,9 @@
     }
   }
 
+  .weight{
+    background-color:blanchedalmond;
+  }
   .object{
     background-image: url(img/diamond.svg);
     background-position: center;
