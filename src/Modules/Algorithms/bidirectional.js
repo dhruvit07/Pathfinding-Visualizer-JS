@@ -1,31 +1,58 @@
-export default function weightedSearchAlgorithm(nodes, start, target, nodesToAnimate, boardArray, name, heuristic) {
-  if (name === "astar") return astar(nodes, start, target, nodesToAnimate, boardArray, name)
+// const astar = require("./astar");
+
+
+
+export default function bidirectional(nodes, start, target, nodesToAnimate, nodeArray, name, heuristic, board) {
+//   if (name === "astar") return astar(nodes, start, target, nodesToAnimate, nodeArray, name)
+
   if (!start || !target || start === target) {
     return false;
   }
+
   nodes[start].distance = 0;
   nodes[start].direction = "right";
-  let unvisitedNodes = Object.keys(nodes);
-  while (unvisitedNodes.length) {
-    let currentNode = closestNode(nodes, unvisitedNodes);
-    while (currentNode.status === "wall" && unvisitedNodes.length) {
-      currentNode = closestNode(nodes, unvisitedNodes)
+  nodes[target].otherdistance = 0;
+  nodes[target].otherdirection = "left";
+  let visitedNodes = {};
+  let unvisitedNodesOne = Object.keys(nodes);
+  let unvisitedNodesTwo = Object.keys(nodes);
+  while (unvisitedNodesOne.length && unvisitedNodesTwo.length) {
+    let currentNode = closestNode(nodes, unvisitedNodesOne);
+    let secondCurrentNode = closestNodeTwo(nodes, unvisitedNodesTwo);
+    while ((currentNode.nodeType === "wall" || secondCurrentNode.nodeType === "wall") && unvisitedNodesOne.length && unvisitedNodesTwo.length) {
+      if (currentNode.nodeType === "wall") currentNode = closestNode(nodes, unvisitedNodesOne);
+      if (secondCurrentNode.nodeType === "wall") secondCurrentNode = closestNodeTwo(nodes, unvisitedNodesTwo);
     }
-    if (currentNode.distance === Infinity) {
+    if (currentNode.distance === Infinity || secondCurrentNode.otherdistance === Infinity) {
       return false;
     }
+    
     nodesToAnimate.push(currentNode);
-    currentNode.status = "visited";
-    if (currentNode.id === target) return "success!";
-    if (name === "CLA" || name === "greedy") {
-      updateNeighbors(nodes, currentNode, boardArray, target, name, start, heuristic);
-    } else if (name === "dijkstra") {
-      updateNeighbors(nodes, currentNode, boardArray);
+    nodesToAnimate.push(secondCurrentNode);
+    currentNode.nodeType = "visited";
+    secondCurrentNode.nodeType = "visited";
+    if (visitedNodes[currentNode.id]) {
+      board.middleNode = currentNode.id;
+      return "success";
+    } else if (visitedNodes[secondCurrentNode.id]) {
+      board.middleNode = secondCurrentNode.id;
+      return "success";
+    } else if (currentNode === secondCurrentNode) {
+      board.middleNode = secondCurrentNode.id;
+      return "success";
     }
+    visitedNodes[currentNode.id] = true;
+    visitedNodes[secondCurrentNode.id] = true;
+    updateNeighbors(nodes, currentNode, nodeArray, target, name, start, heuristic);
+    updateNeighborsTwo(nodes, secondCurrentNode, nodeArray, start, name, target, heuristic);
+    
   }
 }
 
-function closestNode(nodes, unvisitedNodes) {
+
+
+
+export function closestNode(nodes, unvisitedNodes) {
   let currentClosest, index;
   for (let i = 0; i < unvisitedNodes.length; i++) {
     if (!currentClosest || currentClosest.distance > nodes[unvisitedNodes[i]].distance) {
@@ -37,45 +64,36 @@ function closestNode(nodes, unvisitedNodes) {
   return currentClosest;
 }
 
-function updateNeighbors(nodes, node, boardArray, target, name, start, heuristic) {
-  let neighbors = getNeighbors(node.id, nodes, boardArray);
+export function closestNodeTwo(nodes, unvisitedNodes) {
+  let currentClosest, index;
+  for (let i = 0; i < unvisitedNodes.length; i++) {
+    if (!currentClosest || currentClosest.otherdistance > nodes[unvisitedNodes[i]].otherdistance) {
+      currentClosest = nodes[unvisitedNodes[i]];
+      index = i;
+    }
+  }
+  unvisitedNodes.splice(index, 1);
+  return currentClosest;
+}
+
+export function updateNeighbors(nodes, node, nodeArray, target, name, start, heuristic) {
+  let neighbors = getNeighbors(node.id, nodes, nodeArray);
   for (let neighbor of neighbors) {
-    if (target) {
-      updateNode(node, nodes[neighbor], nodes[target], name, nodes, nodes[start], heuristic, boardArray);
-    } else {
-      updateNode(node, nodes[neighbor]);
-    }
+    updateNode(node, nodes[neighbor], nodes[target], name, nodes, nodes[start], heuristic, nodeArray);
   }
 }
 
-function averageNumberOfNodesBetween(currentNode) {
-  let num = 0;
-  while (currentNode.previousNode) {
-    num++;
-    currentNode = currentNode.previousNode;
+export function updateNeighborsTwo(nodes, node, nodeArray, target, name, start, heuristic) {
+  let neighbors = getNeighbors(node.id, nodes, nodeArray);
+  for (let neighbor of neighbors) {
+    updateNodeTwo(node, nodes[neighbor], nodes[target], name, nodes, nodes[start], heuristic, nodeArray);
   }
-  return num;
 }
 
-
-function updateNode(currentNode, targetNode, actualTargetNode, name, nodes, actualStartNode, heuristic, boardArray) {
+export function updateNode(currentNode, targetNode, actualTargetNode, name, nodes, actualStartNode, heuristic, nodeArray) {
   let distance = getDistance(currentNode, targetNode);
-  let distanceToCompare;
-  if (actualTargetNode && name === "CLA") {
-    let weight = targetNode.weight === 15 ? 15 : 1;
-    if (heuristic === "manhattanDistance") {
-      distanceToCompare = currentNode.distance + (distance[0] + weight) * manhattanDistance(targetNode, actualTargetNode);
-    } else if (heuristic === "poweredManhattanDistance") {
-      distanceToCompare = currentNode.distance + targetNode.weight + distance[0] + Math.pow(manhattanDistance(targetNode, actualTargetNode), 2);
-    } else if (heuristic === "extraPoweredManhattanDistance") {
-      distanceToCompare = currentNode.distance + (distance[0] + weight) * Math.pow(manhattanDistance(targetNode, actualTargetNode), 7);
-    }
-    let startNodeManhattanDistance = manhattanDistance(actualStartNode, actualTargetNode);
-  } else if (actualTargetNode && name === "greedy") {
-    distanceToCompare = targetNode.weight + distance[0] + manhattanDistance(targetNode, actualTargetNode);
-  } else {
-    distanceToCompare = currentNode.distance + targetNode.weight + distance[0];
-  }
+  let weight = targetNode.weight === 15 ? 15 : 1;
+  let distanceToCompare = currentNode.distance + (weight + distance[0]) * manhattanDistance(targetNode, actualTargetNode);
   if (distanceToCompare < targetNode.distance) {
     targetNode.distance = distanceToCompare;
     targetNode.previousNode = currentNode.id;
@@ -84,33 +102,44 @@ function updateNode(currentNode, targetNode, actualTargetNode, name, nodes, actu
   }
 }
 
-function getNeighbors(id, nodes, boardArray) {
+export function updateNodeTwo(currentNode, targetNode, actualTargetNode, name, nodes, actualStartNode, heuristic, nodeArray) {
+  let distance = getDistanceTwo(currentNode, targetNode);
+  let weight = targetNode.weight === 15 ? 15 : 1;
+  let distanceToCompare = currentNode.otherdistance + (weight + distance[0]) * manhattanDistance(targetNode, actualTargetNode);
+  if (distanceToCompare < targetNode.otherdistance) {
+    targetNode.otherdistance = distanceToCompare;
+    targetNode.otherpreviousNode = currentNode.id;
+    targetNode.path = distance[1];
+    targetNode.otherdirection = distance[2];
+  }
+}
+
+export function getNeighbors(id, nodes, nodeArray) {
   let coordinates = id.split("-");
   let x = parseInt(coordinates[0]);
   let y = parseInt(coordinates[1]);
   let neighbors = [];
   let potentialNeighbor;
-  if (boardArray[x - 1] && boardArray[x - 1][y]) {
+  if (nodeArray[x - 1] && nodeArray[x - 1][y]) {
     potentialNeighbor = `${(x - 1).toString()}-${y.toString()}`
-    if (nodes[potentialNeighbor].status !== "wall") neighbors.push(potentialNeighbor);
+    if (nodes[potentialNeighbor].nodeType !== "wall") neighbors.push(potentialNeighbor);
   }
-  if (boardArray[x + 1] && boardArray[x + 1][y]) {
+  if (nodeArray[x + 1] && nodeArray[x + 1][y]) {
     potentialNeighbor = `${(x + 1).toString()}-${y.toString()}`
-    if (nodes[potentialNeighbor].status !== "wall") neighbors.push(potentialNeighbor);
+    if (nodes[potentialNeighbor].nodeType !== "wall") neighbors.push(potentialNeighbor);
   }
-  if (boardArray[x][y - 1]) {
+  if (nodeArray[x][y - 1]) {
     potentialNeighbor = `${x.toString()}-${(y - 1).toString()}`
-    if (nodes[potentialNeighbor].status !== "wall") neighbors.push(potentialNeighbor);
+    if (nodes[potentialNeighbor].nodeType !== "wall") neighbors.push(potentialNeighbor);
   }
-  if (boardArray[x][y + 1]) {
+  if (nodeArray[x][y + 1]) {
     potentialNeighbor = `${x.toString()}-${(y + 1).toString()}`
-    if (nodes[potentialNeighbor].status !== "wall") neighbors.push(potentialNeighbor);
+    if (nodes[potentialNeighbor].nodeType !== "wall") neighbors.push(potentialNeighbor);
   }
   return neighbors;
 }
 
-
-function getDistance(nodeOne, nodeTwo) {
+export function getDistance(nodeOne, nodeTwo) {
   let currentCoordinates = nodeOne.id.split("-");
   let targetCoordinates = nodeTwo.id.split("-");
   let x1 = parseInt(currentCoordinates[0]);
@@ -161,7 +190,58 @@ function getDistance(nodeOne, nodeTwo) {
   }
 }
 
-function manhattanDistance(nodeOne, nodeTwo) {
+export function getDistanceTwo(nodeOne, nodeTwo) {
+  let currentCoordinates = nodeOne.id.split("-");
+  let targetCoordinates = nodeTwo.id.split("-");
+  let x1 = parseInt(currentCoordinates[0]);
+  let y1 = parseInt(currentCoordinates[1]);
+  let x2 = parseInt(targetCoordinates[0]);
+  let y2 = parseInt(targetCoordinates[1]);
+  if (x2 < x1) {
+    if (nodeOne.otherdirection === "up") {
+      return [1, ["f"], "up"];
+    } else if (nodeOne.otherdirection === "right") {
+      return [2, ["l", "f"], "up"];
+    } else if (nodeOne.otherdirection === "left") {
+      return [2, ["r", "f"], "up"];
+    } else if (nodeOne.otherdirection === "down") {
+      return [3, ["r", "r", "f"], "up"];
+    }
+  } else if (x2 > x1) {
+    if (nodeOne.otherdirection === "up") {
+      return [3, ["r", "r", "f"], "down"];
+    } else if (nodeOne.otherdirection === "right") {
+      return [2, ["r", "f"], "down"];
+    } else if (nodeOne.otherdirection === "left") {
+      return [2, ["l", "f"], "down"];
+    } else if (nodeOne.otherdirection === "down") {
+      return [1, ["f"], "down"];
+    }
+  }
+  if (y2 < y1) {
+    if (nodeOne.otherdirection === "up") {
+      return [2, ["l", "f"], "left"];
+    } else if (nodeOne.otherdirection === "right") {
+      return [3, ["l", "l", "f"], "left"];
+    } else if (nodeOne.otherdirection === "left") {
+      return [1, ["f"], "left"];
+    } else if (nodeOne.otherdirection === "down") {
+      return [2, ["r", "f"], "left"];
+    }
+  } else if (y2 > y1) {
+    if (nodeOne.otherdirection === "up") {
+      return [2, ["r", "f"], "right"];
+    } else if (nodeOne.otherdirection === "right") {
+      return [1, ["f"], "right"];
+    } else if (nodeOne.otherdirection === "left") {
+      return [3, ["r", "r", "f"], "right"];
+    } else if (nodeOne.otherdirection === "down") {
+      return [2, ["l", "f"], "right"];
+    }
+  }
+}
+
+export function manhattanDistance(nodeOne, nodeTwo) {
   let nodeOneCoordinates = nodeOne.id.split("-").map(ele => parseInt(ele));
   let nodeTwoCoordinates = nodeTwo.id.split("-").map(ele => parseInt(ele));
   let xChange = Math.abs(nodeOneCoordinates[0] - nodeTwoCoordinates[0]);
@@ -169,7 +249,7 @@ function manhattanDistance(nodeOne, nodeTwo) {
   return (xChange + yChange);
 }
 
-function weightedManhattanDistance(nodeOne, nodeTwo, nodes) {
+export function weightedManhattanDistance(nodeOne, nodeTwo, nodes) {
   let nodeOneCoordinates = nodeOne.id.split("-").map(ele => parseInt(ele));
   let nodeTwoCoordinates = nodeTwo.id.split("-").map(ele => parseInt(ele));
   let xChange = Math.abs(nodeOneCoordinates[0] - nodeTwoCoordinates[0]);
