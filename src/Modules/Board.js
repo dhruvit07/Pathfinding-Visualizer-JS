@@ -145,9 +145,7 @@ Board.prototype.addEventListeners = function () {
                 } else if (board.pressedNodeStatus === "object") {
                     board.object = currentId;
                 }
-                else{
                 board.pressedNodeType = "normal";
-                }
             }
             currentElement.onmouseenter = () => {
                 if (board.mouseDown && board.pressedNodeType !== "normal") {
@@ -181,7 +179,8 @@ Board.prototype.changeSpecialNode = function (currentNode) {
     let element = document.getElementById(currentNode.id), previousElement;
     if (this.previouslySwitchedNode) previousElement = document.getElementById(this.previouslySwitchedNode.id);
     if (currentNode.nodeType !== "target" && currentNode.nodeType !== "start" && currentNode.nodeType !== "object") {
-        if (this.previouslySwitchedNode) {
+        // console.log(currentNode.nodeType);  
+      if (this.previouslySwitchedNode) {
             this.previouslySwitchedNode.nodeType = this.previouslyPressedNodeStatus;
             previousElement.className = this.previouslySwitchedNodeWeight === 15 ?
                 "unvisited weight" : this.previouslyPressedNodeStatus;
@@ -197,9 +196,11 @@ Board.prototype.changeSpecialNode = function (currentNode) {
             currentNode.weight = 0;
         }
     } else if (currentNode.nodeType !== this.pressedNodeType && !this.algoDone) {
+      // console.log(currentNode.nodeType);
         this.previouslySwitchedNode.nodeType = this.pressedNodeType;
         previousElement.className = this.pressedNodeType;
     } else if (currentNode.nodeType === this.pressedNodeType) {
+        // console.log(currentNode.nodeType);
         this.previouslySwitchedNode = currentNode;
         element.className = this.previouslyPressedNodeStatus;
         currentNode.nodeType = this.previouslyPressedNodeStatus;
