@@ -1,13 +1,3 @@
-import Board from "./Modules/Board.js";
-import getDistance from "./Modules/getDistance.js";
-import Node from "./Modules/Node.js";
-import weightedSearchAlgorithm from "./Modules/Algorithms/Dijkstra.js";
-import recursiveDivisionMaze from "./Modules/Maze/recursiveMaze.js";
-import mazeGenerationAnimations from "./Modules/animation/mazeGenerationAnimation.js";
-import bidirectional from "./Modules/Algorithms/bidirectional.js";
-import launchAnimations from "./Modules/animation/launchAnimation.js";
-import unweightedSearchAlgorithm from "./Modules/Algorithms/unweightedSearchAlgorithm.js";
-
 
 let height = Math.floor(document.documentElement.clientHeight / 50);
 let width = Math.floor(document.documentElement.clientWidth / 40);
