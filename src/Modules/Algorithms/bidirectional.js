@@ -3,7 +3,7 @@
 
 
 export default function bidirectional(nodes, start, target, nodesToAnimate, nodeArray, name, heuristic, board) {
-//   if (name === "astar") return astar(nodes, start, target, nodesToAnimate, nodeArray, name)
+  //   if (name === "astar") return astar(nodes, start, target, nodesToAnimate, nodeArray, name)
 
   if (!start || !target || start === target) {
     return false;
@@ -26,7 +26,7 @@ export default function bidirectional(nodes, start, target, nodesToAnimate, node
     if (currentNode.distance === Infinity || secondCurrentNode.otherdistance === Infinity) {
       return false;
     }
-    
+
     nodesToAnimate.push(currentNode);
     nodesToAnimate.push(secondCurrentNode);
     currentNode.nodeType = "visited";
@@ -45,7 +45,7 @@ export default function bidirectional(nodes, start, target, nodesToAnimate, node
     visitedNodes[secondCurrentNode.id] = true;
     updateNeighbors(nodes, currentNode, nodeArray, target, name, start, heuristic);
     updateNeighborsTwo(nodes, secondCurrentNode, nodeArray, start, name, target, heuristic);
-    
+
   }
 }
 
@@ -257,7 +257,7 @@ export function weightedManhattanDistance(nodeOne, nodeTwo, nodes) {
 
   if (nodeOneCoordinates[0] < nodeTwoCoordinates[0] && nodeOneCoordinates[1] < nodeTwoCoordinates[1]) {
     let additionalxChange = 0,
-        additionalyChange = 0;
+      additionalyChange = 0;
     for (let currentx = nodeOneCoordinates[0]; currentx <= nodeTwoCoordinates[0]; currentx++) {
       let currentId = `${currentx}-${nodeOne.id.split("-")[1]}`;
       let currentNode = nodes[currentId];
@@ -270,7 +270,7 @@ export function weightedManhattanDistance(nodeOne, nodeTwo, nodes) {
     }
 
     let otherAdditionalxChange = 0,
-        otherAdditionalyChange = 0;
+      otherAdditionalyChange = 0;
     for (let currenty = nodeOneCoordinates[1]; currenty <= nodeTwoCoordinates[1]; currenty++) {
       let currentId = `${nodeOne.id.split("-")[0]}-${currenty}`;
       let currentNode = nodes[currentId];
@@ -291,7 +291,7 @@ export function weightedManhattanDistance(nodeOne, nodeTwo, nodes) {
     }
   } else if (nodeOneCoordinates[0] < nodeTwoCoordinates[0] && nodeOneCoordinates[1] >= nodeTwoCoordinates[1]) {
     let additionalxChange = 0,
-        additionalyChange = 0;
+      additionalyChange = 0;
     for (let currentx = nodeOneCoordinates[0]; currentx <= nodeTwoCoordinates[0]; currentx++) {
       let currentId = `${currentx}-${nodeOne.id.split("-")[1]}`;
       let currentNode = nodes[currentId];
@@ -304,7 +304,7 @@ export function weightedManhattanDistance(nodeOne, nodeTwo, nodes) {
     }
 
     let otherAdditionalxChange = 0,
-        otherAdditionalyChange = 0;
+      otherAdditionalyChange = 0;
     for (let currenty = nodeOneCoordinates[1]; currenty >= nodeTwoCoordinates[1]; currenty--) {
       let currentId = `${nodeOne.id.split("-")[0]}-${currenty}`;
       let currentNode = nodes[currentId];
@@ -325,7 +325,7 @@ export function weightedManhattanDistance(nodeOne, nodeTwo, nodes) {
     }
   } else if (nodeOneCoordinates[0] >= nodeTwoCoordinates[0] && nodeOneCoordinates[1] < nodeTwoCoordinates[1]) {
     let additionalxChange = 0,
-        additionalyChange = 0;
+      additionalyChange = 0;
     for (let currentx = nodeOneCoordinates[0]; currentx >= nodeTwoCoordinates[0]; currentx--) {
       let currentId = `${currentx}-${nodeOne.id.split("-")[1]}`;
       let currentNode = nodes[currentId];
@@ -338,7 +338,7 @@ export function weightedManhattanDistance(nodeOne, nodeTwo, nodes) {
     }
 
     let otherAdditionalxChange = 0,
-        otherAdditionalyChange = 0;
+      otherAdditionalyChange = 0;
     for (let currenty = nodeOneCoordinates[1]; currenty <= nodeTwoCoordinates[1]; currenty++) {
       let currentId = `${nodeOne.id.split("-")[0]}-${currenty}`;
       let currentNode = nodes[currentId];
@@ -358,40 +358,40 @@ export function weightedManhattanDistance(nodeOne, nodeTwo, nodes) {
       yChange += otherAdditionalyChange;
     }
   } else if (nodeOneCoordinates[0] >= nodeTwoCoordinates[0] && nodeOneCoordinates[1] >= nodeTwoCoordinates[1]) {
-      let additionalxChange = 0,
-          additionalyChange = 0;
-      for (let currentx = nodeOneCoordinates[0]; currentx >= nodeTwoCoordinates[0]; currentx--) {
-        let currentId = `${currentx}-${nodeOne.id.split("-")[1]}`;
-        let currentNode = nodes[currentId];
-        additionalxChange += currentNode.weight;
-      }
-      for (let currenty = nodeOneCoordinates[1]; currenty >= nodeTwoCoordinates[1]; currenty--) {
-        let currentId = `${nodeTwoCoordinates[0]}-${currenty}`;
-        let currentNode = nodes[currentId];
-        additionalyChange += currentNode.weight;
-      }
-
-      let otherAdditionalxChange = 0,
-          otherAdditionalyChange = 0;
-      for (let currenty = nodeOneCoordinates[1]; currenty >= nodeTwoCoordinates[1]; currenty--) {
-        let currentId = `${nodeOne.id.split("-")[0]}-${currenty}`;
-        let currentNode = nodes[currentId];
-        additionalyChange += currentNode.weight;
-      }
-      for (let currentx = nodeOneCoordinates[0]; currentx >= nodeTwoCoordinates[0]; currentx--) {
-        let currentId = `${currentx}-${nodeTwoCoordinates[1]}`;
-        let currentNode = nodes[currentId];
-        additionalxChange += currentNode.weight;
-      }
-
-      if (additionalxChange + additionalyChange < otherAdditionalxChange + otherAdditionalyChange) {
-        xChange += additionalxChange;
-        yChange += additionalyChange;
-      } else {
-        xChange += otherAdditionalxChange;
-        yChange += otherAdditionalyChange;
-      }
+    let additionalxChange = 0,
+      additionalyChange = 0;
+    for (let currentx = nodeOneCoordinates[0]; currentx >= nodeTwoCoordinates[0]; currentx--) {
+      let currentId = `${currentx}-${nodeOne.id.split("-")[1]}`;
+      let currentNode = nodes[currentId];
+      additionalxChange += currentNode.weight;
     }
+    for (let currenty = nodeOneCoordinates[1]; currenty >= nodeTwoCoordinates[1]; currenty--) {
+      let currentId = `${nodeTwoCoordinates[0]}-${currenty}`;
+      let currentNode = nodes[currentId];
+      additionalyChange += currentNode.weight;
+    }
+
+    let otherAdditionalxChange = 0,
+      otherAdditionalyChange = 0;
+    for (let currenty = nodeOneCoordinates[1]; currenty >= nodeTwoCoordinates[1]; currenty--) {
+      let currentId = `${nodeOne.id.split("-")[0]}-${currenty}`;
+      let currentNode = nodes[currentId];
+      additionalyChange += currentNode.weight;
+    }
+    for (let currentx = nodeOneCoordinates[0]; currentx >= nodeTwoCoordinates[0]; currentx--) {
+      let currentId = `${currentx}-${nodeTwoCoordinates[1]}`;
+      let currentNode = nodes[currentId];
+      additionalxChange += currentNode.weight;
+    }
+
+    if (additionalxChange + additionalyChange < otherAdditionalxChange + otherAdditionalyChange) {
+      xChange += additionalxChange;
+      yChange += additionalyChange;
+    } else {
+      xChange += otherAdditionalxChange;
+      yChange += otherAdditionalyChange;
+    }
+  }
 
   return xChange + yChange;
 
