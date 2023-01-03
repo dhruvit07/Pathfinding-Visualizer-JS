@@ -14,6 +14,7 @@ let board = new Board(height, width);
 board.initialize();
 let success = "";
 
+x
 document.getElementById("startButtonDijkstra").onclick = function () {
 
   board.currentAlgorithm = "dijkstra";
