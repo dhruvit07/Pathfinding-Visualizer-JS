@@ -2,8 +2,8 @@ name: changelog
 
 on:
   push:
-    branches:
-      - dev
+    tags:
+      - "dev_v*.*.*"
   
 jobs:
   changelog:
@@ -20,6 +20,12 @@ jobs:
           server: ftpupload.net
           username: b7_33391134
           password: ${{ secrets.FTP_PASSWORD }}
+          server-dir: htdocs/
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/node_modules/**
+            **/*.md
 
 
       - name: Changelog
@@ -44,6 +50,7 @@ jobs:
             other: Other Changes
           default-commit-type: Other Changes
           release-name: ${{ github.ref_name }}
+          semver: false
 
       - name: Create Release
         id: create_release
