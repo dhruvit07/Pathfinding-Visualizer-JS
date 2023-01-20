@@ -2,14 +2,25 @@ name: changelog
 
 on:
   push:
-    tags:
-      - "v*"
+    branches:
+      - main
   
 jobs:
   changelog:
     permissions: write-all
     runs-on: ubuntu-latest
-    steps:
+    steps: 
+    
+      - name: 🚚 Get latest code
+        uses: actions/checkout@v2
+
+      - name: 📂 Sync files
+        uses: SamKirkland/FTP-Deploy-Action@4.3.3
+        with:
+          server: ftpupload.net
+          username: b7_33391134
+          password: ${{ secrets.FTP_PASSWORD }}
+
 
       - name: Changelog
         uses: ardalanamini/auto-changelog@v3
