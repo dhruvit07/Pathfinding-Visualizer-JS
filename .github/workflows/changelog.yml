@@ -57,7 +57,7 @@ jobs:
         uses: ncipollo/release-action@v1
         with:
           makeLatest: true
-          name: Production Release ${{ github.ref_name }}
+          name: Development Release ${{ github.ref_name }}
           body: ${{ steps.changelog.outputs.changelog }}
           token: ${{ secrets.github_token }}
 
