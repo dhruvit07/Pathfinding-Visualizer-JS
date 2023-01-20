@@ -21,6 +21,9 @@ jobs:
           username: b7_33391134
           password: ${{ secrets.FTP_PASSWORD }}
           server-dir: htdocs/
+          local-dir: |
+            **/src/
+            **/index.html
           exclude: |
             **/.git*
             **/.git*/**
