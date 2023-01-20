@@ -44,10 +44,6 @@ jobs:
             other: Other Changes
           default-commit-type: Other Changes
           release-name: ${{ github.ref_name }}
-          mention-authors: true
-          mention-new-contributors: true
-          include-compare: true
-          semver: true
 
       - name: Create Release
         id: create_release
