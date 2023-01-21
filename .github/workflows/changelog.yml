@@ -1,15 +1,31 @@
 name: changelog
 
 on:
-  push:
-    tags:
-      - "v*"
+  workflow_dispatch:
   
 jobs:
   changelog:
     permissions: write-all
     runs-on: ubuntu-latest
-    steps:
+    steps: 
+    
+      - name: 🚚 Get latest code
+        uses: actions/checkout@v2
+
+      - name: 📂 Sync files
+        uses: SamKirkland/FTP-Deploy-Action@4.3.3
+        with:
+          server: ftpupload.net
+          username: b7_33391134
+          password: ${{ secrets.FTP_PASSWORD }}
+          server-dir: htdocs/
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/node_modules/**
+            **/*.md
+            
+
 
       - name: Changelog
         uses: ardalanamini/auto-changelog@v3
@@ -33,26 +49,17 @@ jobs:
             other: Other Changes
           default-commit-type: Other Changes
           release-name: ${{ github.ref_name }}
-          mention-authors: true
-          mention-new-contributors: true
-          include-compare: true
-          semver: true
+          semver: false
 
       - name: Create Release
         id: create_release
         uses: ncipollo/release-action@v1
         with:
           makeLatest: true
-          name: Production Release ${{ github.ref_name }}
+          name: Development Release ${{ github.ref_name }}
           body: ${{ steps.changelog.outputs.changelog }}
           token: ${{ secrets.github_token }}
 
-      - name: Commit CHANGELOG.md
-        uses: stefanzweifel/git-auto-commit-action@v4
-        with:
-          branch: main
-          commit_message: 'docs: update CHANGELOG.md for ${{ github.ref_name }} [skip ci]'
-          file_pattern: CHANGELOG.md
 
 
 

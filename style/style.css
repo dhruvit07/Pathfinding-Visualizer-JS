@@ -702,6 +702,8 @@ visited.weight {
   animation-play-state: running;
 }
 
+/* Animations  */
+
 @keyframes unvisitedWeightAnimation {
   0% {
     transform: scale(.3);
