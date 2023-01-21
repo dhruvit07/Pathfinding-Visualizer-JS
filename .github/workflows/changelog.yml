@@ -24,7 +24,6 @@ jobs:
             **/.git*/**
             **/node_modules/**
             **/*.md
-            style/**
             
 
 
