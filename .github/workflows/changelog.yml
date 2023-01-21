@@ -28,38 +28,38 @@ jobs:
             
 
 
-      - name: Changelog
-        uses: ardalanamini/auto-changelog@v3
-        id: changelog
-        with:
-          github-token: ${{ secrets.github_token }}
-          commit-types: |
-            breaking: Breaking Changes
-            feat: New Features
-            fix: Bug Fixes
-            revert: Reverts
-            perf: Performance Improvements
-            refactor: Refactors
-            deps: Dependencies
-            docs: Documentation Changes
-            style: Code Style Changes
-            build: Build System
-            ci: Continuous Integration
-            test: Tests
-            chore: Chores
-            other: Other Changes
-          default-commit-type: Other Changes
-          release-name: ${{ github.ref_name }}
-          semver: false
+      # - name: Changelog
+      #   uses: ardalanamini/auto-changelog@v3
+      #   id: changelog
+      #   with:
+      #     github-token: ${{ secrets.github_token }}
+      #     commit-types: |
+      #       breaking: Breaking Changes
+      #       feat: New Features
+      #       fix: Bug Fixes
+      #       revert: Reverts
+      #       perf: Performance Improvements
+      #       refactor: Refactors
+      #       deps: Dependencies
+      #       docs: Documentation Changes
+      #       style: Code Style Changes
+      #       build: Build System
+      #       ci: Continuous Integration
+      #       test: Tests
+      #       chore: Chores
+      #       other: Other Changes
+      #     default-commit-type: Other Changes
+      #     release-name: ${{ github.ref_name }}
+      #     semver: false
 
-      - name: Create Release
-        id: create_release
-        uses: ncipollo/release-action@v1
-        with:
-          makeLatest: true
-          name: Development Release ${{ github.ref_name }}
-          body: ${{ steps.changelog.outputs.changelog }}
-          token: ${{ secrets.github_token }}
+      # - name: Create Release
+      #   id: create_release
+      #   uses: ncipollo/release-action@v1
+      #   with:
+      #     makeLatest: true
+      #     name: Development Release ${{ github.ref_name }}
+      #     body: ${{ steps.changelog.outputs.changelog }}
+      #     token: ${{ secrets.github_token }}
 
 
 
