@@ -1,5 +1,7 @@
 /* Default Setting */
 
+
+
 * {
   font-family: "Lato", Helvetica, Arial, sans-serif;
   font-size: 18px;
@@ -701,8 +703,6 @@ visited.weight {
   animation-fill-mode: forwards;
   animation-play-state: running;
 }
-
-/* Animations  */
 
 @keyframes unvisitedWeightAnimation {
   0% {
