@@ -252,6 +252,7 @@ export function bootstrapApp() {
       updateScrubber(targetIndex, buffer.totalSteps);
     },
     onStateChange: (state: SimulationState) => {
+      renderer.setSimulating(state === 'RUNNING');
       switch (state) {
         case 'RUNNING':
           setStatus('RUNNING');
@@ -438,9 +439,14 @@ export function bootstrapApp() {
       runner.reset();
       for (const c of coords) {
         if (coordEquals(c, startCoord) || coordEquals(c, targetCoord)) continue;
-        if (brush === 'wall') grid.setCellType(c, 'wall');
-        else if (brush === 'weight') grid.setCellType(c, 'weight', weightVal ?? 5);
-        else if (brush === 'erase') grid.setCellType(c, 'empty');
+        if (brush === 'wall') {
+          grid.setCellType(c, 'wall');
+          renderer.triggerWallPop(c);
+        } else if (brush === 'weight') {
+          grid.setCellType(c, 'weight', weightVal ?? 5);
+        } else if (brush === 'erase') {
+          grid.setCellType(c, 'empty');
+        }
       }
       renderer.render();
       if (arenaManager.isArenaMode) {
@@ -536,14 +542,27 @@ export function bootstrapApp() {
     }
   });
 
-  // Brush selector
+  // Brush selector & cursor styling
+  function updateCanvasCursor(brush: BrushMode) {
+    const cursorClass = `cursor-${brush}`;
+    const allBrushes = ['cursor-wall', 'cursor-weight', 'cursor-erase'];
+    for (const c of [canvas, canvasA, canvasB]) {
+      if (!c) continue;
+      c.classList.remove(...allBrushes);
+      c.classList.add(cursorClass);
+    }
+  }
+
   function setActiveBrush(brush: BrushMode) {
     interactionHandler.brush = brush;
     arenaManager.setBrush(brush);
+    updateCanvasCursor(brush);
     btnBrushWall?.classList.toggle('active', brush === 'wall');
     btnBrushWeight?.classList.toggle('active', brush === 'weight');
     btnBrushErase?.classList.toggle('active', brush === 'erase');
   }
+
+  updateCanvasCursor('wall');
 
   btnBrushWall?.addEventListener('click', () => setActiveBrush('wall'));
   btnBrushWeight?.addEventListener('click', () => setActiveBrush('weight'));

@@ -24,6 +24,9 @@ export interface Theme {
   pathGlow: string;
   pathCore: string;
   pathBloom: string;
+  nebulaColors: string[];
+  particleColor: string;
+  rippleColor: string;
 }
 
 export interface ThemeGradient {
@@ -109,6 +112,9 @@ export const CYBERPUNK_THEME: Theme = {
   pathGlow: 'rgba(251, 191, 36, 0.65)',
   pathCore: '#ffffff',
   pathBloom: 'rgba(6, 182, 212, 0.35)',
+  nebulaColors: ['rgba(3, 105, 161, 0.12)', 'rgba(134, 25, 143, 0.08)', 'rgba(6, 182, 212, 0.08)'],
+  particleColor: 'rgba(34, 211, 238, 0.45)',
+  rippleColor: 'rgba(6, 182, 212, 0.55)',
 };
 
 /**
@@ -137,6 +143,9 @@ export const LIGHT_THEME: Theme = {
   pathGlow: 'rgba(245, 158, 11, 0.4)',
   pathCore: '#ffffff',
   pathBloom: 'rgba(245, 158, 11, 0.2)',
+  nebulaColors: ['rgba(191, 219, 254, 0.18)', 'rgba(251, 207, 232, 0.12)', 'rgba(254, 243, 199, 0.15)'],
+  particleColor: 'rgba(59, 130, 246, 0.35)',
+  rippleColor: 'rgba(59, 130, 246, 0.45)',
 };
 
 /**
@@ -165,6 +174,9 @@ export const HIGH_CONTRAST_THEME: Theme = {
   pathGlow: 'rgba(255, 255, 0, 0.85)',
   pathCore: '#ffffff',
   pathBloom: 'rgba(0, 255, 255, 0.5)',
+  nebulaColors: ['rgba(0, 100, 200, 0.15)', 'rgba(180, 0, 120, 0.15)'],
+  particleColor: 'rgba(255, 255, 255, 0.5)',
+  rippleColor: 'rgba(0, 255, 255, 0.6)',
 };
 
 export const DEFAULT_THEME = CYBERPUNK_THEME;
