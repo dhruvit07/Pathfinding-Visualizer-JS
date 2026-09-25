@@ -8,27 +8,148 @@
   </head>
   <body>
     <div id="app">
+      <!-- Top Navigation & Telemetry HUD -->
       <header class="navbar">
         <div class="brand-section">
           <h1 class="brand-title">Pathfinding Visualizer</h1>
-          <span class="badge-version">v2.0</span>
+          <span class="badge-version">v2.0 PRO</span>
         </div>
+
+        <div class="hud-telemetry" id="telemetryHUD">
+          <div class="hud-item status-badge" id="hudStatus">
+            <span class="status-dot"></span>
+            <span id="statusText">READY</span>
+          </div>
+          <div class="hud-divider"></div>
+          <div class="hud-item">
+            <span class="hud-label">Explored</span>
+            <span class="hud-value" id="hudExplored">0</span>
+          </div>
+          <div class="hud-item">
+            <span class="hud-label">Path Cost</span>
+            <span class="hud-value" id="hudCost">0</span>
+          </div>
+          <div class="hud-item">
+            <span class="hud-label">Time</span>
+            <span class="hud-value" id="hudTime">0.0 ms</span>
+          </div>
+        </div>
+
         <nav class="nav-links">
-          <a class="legacy-link" href="legacy-v1/index.html" title="Open the original legacy v1 version">
+          <a class="legacy-link" href="legacy-v1/index.html" title="Open the original college project">
             <span>🏛️</span>
-            <span>View Legacy v1 College Project</span>
+            <span>View Legacy v1</span>
           </a>
         </nav>
       </header>
 
-      <main class="main-content">
-        <div class="welcome-card">
-          <h2>Pathfinding Visualizer v2 Engine</h2>
-          <p>Next-generation high-performance pathfinding & maze visualizer built with TypeScript and Vite.</p>
-          <div class="status-indicator">
-            <span class="status-dot"></span>
-            <span>Phase 1 Initialized</span>
+      <!-- Glassmorphic Toolbar Controls -->
+      <section class="toolbar">
+        <div class="toolbar-group">
+          <label class="control-label" for="algorithmSelect">Algorithm</label>
+          <select id="algorithmSelect" class="styled-select">
+            <option value="dijkstra">Dijkstra's (Min-Heap)</option>
+            <option value="astar" selected>A* Search (Heuristic)</option>
+            <option value="jps">Jump Point Search (JPS)</option>
+            <option value="bidirectional">Bidirectional Search</option>
+            <option value="bfs">Breadth-First Search (BFS)</option>
+            <option value="dfs">Depth-First Search (DFS)</option>
+          </select>
+        </div>
+
+        <div class="toolbar-group" id="heuristicGroup">
+          <label class="control-label" for="heuristicSelect">Heuristic</label>
+          <select id="heuristicSelect" class="styled-select">
+            <option value="manhattan" selected>Manhattan (4-way)</option>
+            <option value="euclidean">Euclidean</option>
+            <option value="chebyshev">Chebyshev</option>
+            <option value="octile">Octile (8-way)</option>
+          </select>
+        </div>
+
+        <div class="toolbar-group">
+          <label class="control-label" for="mazeSelect">Mazes & Terrain</label>
+          <select id="mazeSelect" class="styled-select">
+            <option value="" disabled selected>Generate Maze...</option>
+            <option value="recursiveDivision">Recursive Division</option>
+            <option value="kruskal">Kruskal's Spanning Tree</option>
+            <option value="prim">Prim's Organic Labyrinth</option>
+            <option value="perlin">Perlin Elevation Terrain</option>
+          </select>
+        </div>
+
+        <div class="toolbar-divider"></div>
+
+        <!-- Brush Tool Toggles -->
+        <div class="toolbar-group brush-group">
+          <label class="control-label">Brush</label>
+          <div class="segmented-control">
+            <button id="btnBrushWall" class="brush-btn active" title="Wall Brush (W)">🧱 Wall</button>
+            <button id="btnBrushWeight" class="brush-btn" title="Weight Brush (E)">⚖️ Weight</button>
+            <button id="btnBrushErase" class="brush-btn" title="Eraser (X)">🧹 Erase</button>
           </div>
+        </div>
+
+        <div class="toolbar-divider"></div>
+
+        <!-- Speed Slider -->
+        <div class="toolbar-group speed-group">
+          <label class="control-label" for="speedRange">Speed: <span id="speedValue">Fast</span></label>
+          <input type="range" id="speedRange" min="1" max="4" value="3" class="styled-slider" />
+        </div>
+
+        <div class="toolbar-divider"></div>
+
+        <!-- Action Controls -->
+        <div class="toolbar-actions">
+          <button id="btnVisualize" class="btn btn-primary" title="Start Visualization (Space)">
+            <span class="btn-icon">▶</span>
+            <span>Visualize</span>
+          </button>
+          <button id="btnPause" class="btn btn-secondary" title="Pause / Resume" disabled>
+            <span class="btn-icon">⏸</span>
+          </button>
+          <button id="btnStep" class="btn btn-secondary" title="Step Forward (S)" disabled>
+            <span class="btn-icon">⏭</span>
+          </button>
+          <button id="btnClearPath" class="btn btn-secondary" title="Clear Path & Visited">
+            <span>Clear Path</span>
+          </button>
+          <button id="btnClearAll" class="btn btn-secondary" title="Clear Entire Board (C)">
+            <span>Clear Map</span>
+          </button>
+        </div>
+
+        <div class="toolbar-divider"></div>
+
+        <!-- Theme Selector -->
+        <div class="toolbar-group">
+          <label class="control-label" for="themeSelect">Theme</label>
+          <select id="themeSelect" class="styled-select compact">
+            <option value="cyberpunk" selected>Cyberpunk</option>
+            <option value="light">Clean Light</option>
+            <option value="high-contrast">High Contrast</option>
+          </select>
+        </div>
+      </section>
+
+      <!-- Main Canvas Viewport -->
+      <main class="canvas-viewport" id="canvasViewport">
+        <canvas id="gridCanvas"></canvas>
+
+        <!-- Floating Legend Overlay -->
+        <div class="legend-panel">
+          <div class="legend-item"><span class="legend-chip chip-start"></span> Start</div>
+          <div class="legend-item"><span class="legend-chip chip-target"></span> Target</div>
+          <div class="legend-item"><span class="legend-chip chip-wall"></span> Wall</div>
+          <div class="legend-item"><span class="legend-chip chip-weight"></span> Weight (5x)</div>
+          <div class="legend-item"><span class="legend-chip chip-visited"></span> Visited</div>
+          <div class="legend-item"><span class="legend-chip chip-path"></span> Shortest Path</div>
+        </div>
+
+        <!-- Interaction Helper Hint -->
+        <div class="interaction-hint">
+          <span>💡 <strong>Tip:</strong> Drag endpoints to reposition • Click & drag to draw • Mouse wheel to zoom • Middle-click / Space+drag to pan</span>
         </div>
       </main>
     </div>
