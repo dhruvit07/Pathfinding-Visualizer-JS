@@ -370,6 +370,54 @@ header.navbar {
   border-color: rgba(255, 255, 255, 0.15);
 }
 
+.btn-icon-only {
+  padding: 0.35rem 0.55rem;
+  font-size: 0.85rem;
+  min-width: 32px;
+  line-height: 1;
+}
+
+/* Timeline Scrubber Container */
+.timeline-group {
+  min-width: 250px;
+}
+
+.timeline-container {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background-color: var(--bg-primary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 0.2rem 0.6rem;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.timeline-slider-wrapper {
+  display: flex;
+  align-items: center;
+  width: 130px;
+}
+
+.timeline-slider {
+  width: 100%;
+}
+
+.timeline-slider:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.scrubber-step {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--accent-cyan);
+  min-width: 62px;
+  text-align: right;
+  white-space: nowrap;
+}
+
 /* Canvas Viewport */
 .canvas-viewport {
   position: relative;

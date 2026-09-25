@@ -8,8 +8,6 @@ import {
   bidirectional,
   jps,
   AlgorithmGenerator,
-  StepEvent,
-  SearchSummary,
 } from './core/algorithms';
 import {
   manhattanDistance,
@@ -19,6 +17,7 @@ import {
 } from './core/heuristics';
 import { recursiveDivision, kruskal, prim, perlinTerrain, MazeGenerator } from './core/mazes';
 import { CanvasRenderer, InteractionHandler, BrushMode, getTheme } from './renderer';
+import { SimulationRunner, SimulationState, HistoryBuffer, TelemetryData } from './engine';
 
 export const APP_INFO = {
   name: 'Pathfinding Visualizer',
@@ -51,7 +50,214 @@ export function bootstrapApp() {
   renderer.setGrid(grid);
   renderer.setEndpoints(startCoord, targetCoord);
 
-  // Initialize InteractionHandler
+  // --- UI Elements ---
+  const algorithmSelect = document.getElementById('algorithmSelect') as HTMLSelectElement;
+  const heuristicSelect = document.getElementById('heuristicSelect') as HTMLSelectElement;
+  const heuristicGroup = document.getElementById('heuristicGroup') as HTMLElement;
+  const mazeSelect = document.getElementById('mazeSelect') as HTMLSelectElement;
+  const themeSelect = document.getElementById('themeSelect') as HTMLSelectElement;
+
+  const btnBrushWall = document.getElementById('btnBrushWall') as HTMLButtonElement;
+  const btnBrushWeight = document.getElementById('btnBrushWeight') as HTMLButtonElement;
+  const btnBrushErase = document.getElementById('btnBrushErase') as HTMLButtonElement;
+
+  const speedRange = document.getElementById('speedRange') as HTMLInputElement;
+  const speedValueLabel = document.getElementById('speedValue') as HTMLElement;
+
+  const btnVisualize = document.getElementById('btnVisualize') as HTMLButtonElement;
+  const btnPause = document.getElementById('btnPause') as HTMLButtonElement;
+  const btnStep = document.getElementById('btnStep') as HTMLButtonElement;
+  const btnStepBack = document.getElementById('btnStepBack') as HTMLButtonElement;
+  const timelineScrubber = document.getElementById('timelineScrubber') as HTMLInputElement;
+  const scrubberStep = document.getElementById('scrubberStep') as HTMLElement;
+
+  const btnClearPath = document.getElementById('btnClearPath') as HTMLButtonElement;
+  const btnClearAll = document.getElementById('btnClearAll') as HTMLButtonElement;
+
+  const hudStatus = document.getElementById('hudStatus') as HTMLElement;
+  const statusText = document.getElementById('statusText') as HTMLElement;
+  const hudExplored = document.getElementById('hudExplored') as HTMLElement;
+  const hudCost = document.getElementById('hudCost') as HTMLElement;
+  const hudTime = document.getElementById('hudTime') as HTMLElement;
+
+  // --- Speed Settings Helper ---
+  function getStepsPerBatch(): number {
+    const val = parseInt(speedRange?.value ?? '3', 10);
+    switch (val) {
+      case 1:
+        if (speedValueLabel) speedValueLabel.textContent = 'Slow';
+        return 1;
+      case 2:
+        if (speedValueLabel) speedValueLabel.textContent = 'Normal';
+        return 3;
+      case 3:
+        if (speedValueLabel) speedValueLabel.textContent = 'Fast';
+        return 10;
+      case 4:
+        if (speedValueLabel) speedValueLabel.textContent = 'Instant';
+        return 500;
+      default:
+        return 5;
+    }
+  }
+
+  // --- HUD Updates ---
+  function setStatus(status: 'READY' | 'RUNNING' | 'PAUSED' | 'FINISHED' | 'NO PATH') {
+    if (!statusText || !hudStatus) return;
+    statusText.textContent = status;
+    hudStatus.className = 'hud-item status-badge';
+    if (status === 'RUNNING') hudStatus.classList.add('running');
+    else if (status === 'PAUSED') hudStatus.classList.add('paused');
+    else if (status === 'NO PATH') hudStatus.classList.add('failed');
+  }
+
+  function updateHUD(explored: number, cost: number, timeMs: number) {
+    if (hudExplored) hudExplored.textContent = explored.toString();
+    if (hudCost) hudCost.textContent = cost === Infinity ? '∞' : cost.toString();
+    if (hudTime) hudTime.textContent = `${timeMs.toFixed(1)} ms`;
+  }
+
+  function getHeuristic() {
+    switch (heuristicSelect?.value) {
+      case 'euclidean':
+        return euclideanDistance;
+      case 'chebyshev':
+        return chebyshevDistance;
+      case 'octile':
+        return octileDistance;
+      default:
+        return manhattanDistance;
+    }
+  }
+
+  // --- Path & Renderer Reconstruction from History ---
+  const currentPath: Coord[] = [];
+
+  function rebuildRendererFromBuffer(index: number, buffer: HistoryBuffer): void {
+    renderer.clearVisited();
+    currentPath.length = 0;
+    if (index < 0) {
+      renderer.setPath([]);
+      renderer.render();
+      return;
+    }
+
+    const events = buffer.getEventsUpTo(index);
+    for (const ev of events) {
+      if (ev.type === 'VISIT') {
+        renderer.addVisited({ coord: ev.coord, direction: ev.direction });
+      } else if (ev.type === 'PATH_STEP') {
+        currentPath.push(ev.coord);
+      }
+    }
+    renderer.setPath(currentPath);
+    renderer.render();
+  }
+
+  function updateScrubber(index: number, total: number): void {
+    if (!timelineScrubber || !scrubberStep) return;
+    timelineScrubber.max = total.toString();
+    const displayVal = Math.max(0, index + 1);
+    timelineScrubber.value = displayVal.toString();
+    timelineScrubber.disabled = total === 0;
+    scrubberStep.textContent = `${displayVal} / ${total}`;
+
+    if (btnStepBack) {
+      btnStepBack.disabled = runner.buffer.isAtStart || runner.isRunning;
+    }
+    if (btnStep) {
+      btnStep.disabled = runner.isRunning || (runner.isFinished && runner.buffer.isAtEnd);
+    }
+  }
+
+  // --- Simulation Runner Engine ---
+  const runner = new SimulationRunner({
+    stepsPerBatch: getStepsPerBatch(),
+    onStep: (event, index, buffer) => {
+      if (event.type === 'VISIT') {
+        renderer.addVisited({ coord: event.coord, direction: event.direction });
+      } else if (event.type === 'PATH_STEP') {
+        currentPath.push(event.coord);
+        renderer.setPath(currentPath);
+      }
+      renderer.requestRender();
+      updateScrubber(index, buffer.totalSteps);
+    },
+    onRewindStep: (_event, index, buffer) => {
+      rebuildRendererFromBuffer(index, buffer);
+      updateScrubber(index, buffer.totalSteps);
+    },
+    onSeek: (targetIndex, buffer) => {
+      rebuildRendererFromBuffer(targetIndex, buffer);
+      updateScrubber(targetIndex, buffer.totalSteps);
+    },
+    onStateChange: (state: SimulationState) => {
+      switch (state) {
+        case 'RUNNING':
+          setStatus('RUNNING');
+          btnVisualize.innerHTML = '<span class="btn-icon">⏸</span><span>Pause</span>';
+          btnPause.disabled = false;
+          btnPause.innerHTML = '<span class="btn-icon">⏸</span>';
+          btnStep.disabled = true;
+          btnStepBack.disabled = true;
+          timelineScrubber.disabled = false;
+          break;
+        case 'PAUSED':
+          setStatus('PAUSED');
+          btnVisualize.innerHTML = '<span class="btn-icon">▶</span><span>Resume</span>';
+          btnPause.disabled = false;
+          btnPause.innerHTML = '<span class="btn-icon">▶</span>';
+          btnStep.disabled = runner.isFinished && runner.buffer.isAtEnd;
+          btnStepBack.disabled = runner.buffer.isAtStart;
+          timelineScrubber.disabled = runner.totalSteps === 0;
+          break;
+        case 'FINISHED':
+          setStatus('FINISHED');
+          btnVisualize.innerHTML = '<span class="btn-icon">▶</span><span>Visualize</span>';
+          btnPause.disabled = true;
+          btnStep.disabled = true;
+          btnStepBack.disabled = runner.buffer.isAtStart;
+          timelineScrubber.disabled = false;
+          break;
+        case 'NO_PATH':
+          setStatus('NO PATH');
+          btnVisualize.innerHTML = '<span class="btn-icon">▶</span><span>Visualize</span>';
+          btnPause.disabled = true;
+          btnStep.disabled = true;
+          btnStepBack.disabled = runner.buffer.isAtStart;
+          timelineScrubber.disabled = false;
+          break;
+        case 'IDLE':
+          setStatus('READY');
+          btnVisualize.innerHTML = '<span class="btn-icon">▶</span><span>Visualize</span>';
+          btnPause.disabled = true;
+          btnStep.disabled = false;
+          btnStepBack.disabled = true;
+          timelineScrubber.disabled = true;
+          break;
+      }
+    },
+    onTelemetry: (data: TelemetryData) => {
+      updateHUD(data.nodesExplored, data.pathCost, data.durationMs);
+    },
+    onFinish: (summary) => {
+      if (summary.found) {
+        renderer.setPath(summary.path);
+      }
+      renderer.render();
+      updateScrubber(runner.currentStep, runner.totalSteps);
+    },
+    onReset: () => {
+      renderer.clearVisited();
+      currentPath.length = 0;
+      renderer.render();
+      updateScrubber(-1, 0);
+      updateHUD(0, 0, 0);
+      setStatus('READY');
+    },
+  });
+
+  // --- InteractionHandler ---
   const interactionHandler = new InteractionHandler({
     camera: renderer.camera,
     cellSize: CELL_SIZE,
@@ -62,6 +268,10 @@ export function bootstrapApp() {
     getStart: () => startCoord,
     getTarget: () => targetCoord,
     onCellPaint: (coords, brush, weightVal) => {
+      if (runner.isRunning) {
+        runner.pause();
+      }
+      runner.reset();
       for (const c of coords) {
         if (coordEquals(c, startCoord) || coordEquals(c, targetCoord)) continue;
         if (brush === 'wall') grid.setCellType(c, 'wall');
@@ -71,6 +281,10 @@ export function bootstrapApp() {
       renderer.render();
     },
     onEndpointMove: (type, newCoord, oldCoord) => {
+      if (runner.isRunning) {
+        runner.pause();
+      }
+      runner.reset();
       grid.setCellType(oldCoord, 'empty');
       grid.setCellType(newCoord, type);
       if (type === 'start') {
@@ -100,122 +314,41 @@ export function bootstrapApp() {
     renderer.render();
   });
 
-  // --- UI Elements ---
-  const algorithmSelect = document.getElementById('algorithmSelect') as HTMLSelectElement;
-  const heuristicSelect = document.getElementById('heuristicSelect') as HTMLSelectElement;
-  const heuristicGroup = document.getElementById('heuristicGroup') as HTMLElement;
-  const mazeSelect = document.getElementById('mazeSelect') as HTMLSelectElement;
-  const themeSelect = document.getElementById('themeSelect') as HTMLSelectElement;
-
-  const btnBrushWall = document.getElementById('btnBrushWall') as HTMLButtonElement;
-  const btnBrushWeight = document.getElementById('btnBrushWeight') as HTMLButtonElement;
-  const btnBrushErase = document.getElementById('btnBrushErase') as HTMLButtonElement;
-
-  const speedRange = document.getElementById('speedRange') as HTMLInputElement;
-  const speedValueLabel = document.getElementById('speedValue') as HTMLElement;
-
-  const btnVisualize = document.getElementById('btnVisualize') as HTMLButtonElement;
-  const btnPause = document.getElementById('btnPause') as HTMLButtonElement;
-  const btnStep = document.getElementById('btnStep') as HTMLButtonElement;
-  const btnClearPath = document.getElementById('btnClearPath') as HTMLButtonElement;
-  const btnClearAll = document.getElementById('btnClearAll') as HTMLButtonElement;
-
-  const hudStatus = document.getElementById('hudStatus') as HTMLElement;
-  const statusText = document.getElementById('statusText') as HTMLElement;
-  const hudExplored = document.getElementById('hudExplored') as HTMLElement;
-  const hudCost = document.getElementById('hudCost') as HTMLElement;
-  const hudTime = document.getElementById('hudTime') as HTMLElement;
-
-  // --- Simulation State ---
-  let currentAlgorithmGenerator: AlgorithmGenerator | null = null;
-  let currentMazeGenerator: MazeGenerator | null = null;
-  let isRunning = false;
-  let isPaused = false;
-  let animFrameId: number | null = null;
-
-  let exploredCount = 0;
-  let algorithmStartTime = 0;
-  const currentPath: Coord[] = [];
-
   // Heuristic dropdown visibility
-  algorithmSelect.addEventListener('change', () => {
+  algorithmSelect?.addEventListener('change', () => {
     const algo = algorithmSelect.value;
-    heuristicGroup.style.display = (algo === 'astar' || algo === 'jps') ? 'flex' : 'none';
+    if (heuristicGroup) {
+      heuristicGroup.style.display = algo === 'astar' || algo === 'jps' ? 'flex' : 'none';
+    }
   });
 
   // Brush selector
   function setActiveBrush(brush: BrushMode) {
     interactionHandler.brush = brush;
-    btnBrushWall.classList.toggle('active', brush === 'wall');
-    btnBrushWeight.classList.toggle('active', brush === 'weight');
-    btnBrushErase.classList.toggle('active', brush === 'erase');
+    btnBrushWall?.classList.toggle('active', brush === 'wall');
+    btnBrushWeight?.classList.toggle('active', brush === 'weight');
+    btnBrushErase?.classList.toggle('active', brush === 'erase');
   }
 
-  btnBrushWall.addEventListener('click', () => setActiveBrush('wall'));
-  btnBrushWeight.addEventListener('click', () => setActiveBrush('weight'));
-  btnBrushErase.addEventListener('click', () => setActiveBrush('erase'));
+  btnBrushWall?.addEventListener('click', () => setActiveBrush('wall'));
+  btnBrushWeight?.addEventListener('click', () => setActiveBrush('weight'));
+  btnBrushErase?.addEventListener('click', () => setActiveBrush('erase'));
 
-  // Speed settings
-  function getStepsPerBatch(): number {
-    const val = parseInt(speedRange.value, 10);
-    switch (val) {
-      case 1: speedValueLabel.textContent = 'Slow'; return 1;
-      case 2: speedValueLabel.textContent = 'Normal'; return 3;
-      case 3: speedValueLabel.textContent = 'Fast'; return 10;
-      case 4: speedValueLabel.textContent = 'Instant'; return 500;
-      default: return 5;
-    }
-  }
-  speedRange.addEventListener('input', getStepsPerBatch);
+  // Speed settings listener
+  speedRange?.addEventListener('input', () => {
+    const batch = getStepsPerBatch();
+    runner.setSpeed(batch);
+  });
 
   // Theme switcher
-  themeSelect.addEventListener('change', () => {
+  themeSelect?.addEventListener('change', () => {
     renderer.setTheme(getTheme(themeSelect.value));
     renderer.render();
   });
 
-  // HUD updates
-  function setStatus(status: 'READY' | 'RUNNING' | 'PAUSED' | 'FINISHED' | 'NO PATH') {
-    statusText.textContent = status;
-    hudStatus.className = 'hud-item status-badge';
-    if (status === 'RUNNING') hudStatus.classList.add('running');
-    else if (status === 'PAUSED') hudStatus.classList.add('paused');
-    else if (status === 'NO PATH') hudStatus.classList.add('failed');
-  }
-
-  function updateHUD(explored: number, cost: number, timeMs: number) {
-    hudExplored.textContent = explored.toString();
-    hudCost.textContent = cost === Infinity ? '∞' : cost.toString();
-    hudTime.textContent = `${timeMs.toFixed(1)} ms`;
-  }
-
-  function getHeuristic() {
-    switch (heuristicSelect.value) {
-      case 'euclidean': return euclideanDistance;
-      case 'chebyshev': return chebyshevDistance;
-      case 'octile': return octileDistance;
-      default: return manhattanDistance;
-    }
-  }
-
-  // --- Algorithm Execution ---
-  function startVisualization() {
-    if (isRunning && !isPaused) {
-      pauseVisualization();
-      return;
-    }
-    if (isPaused) {
-      resumeVisualization();
-      return;
-    }
-
-    // Clear previous search
-    renderer.clearVisited();
-    currentPath.length = 0;
-    exploredCount = 0;
-    updateHUD(0, 0, 0);
-
-    const algoName = algorithmSelect.value;
+  // --- Algorithm Generator Creation ---
+  function createAlgorithmGenerator(): AlgorithmGenerator {
+    const algoName = algorithmSelect?.value ?? 'astar';
     const options = {
       grid,
       start: startCoord,
@@ -225,125 +358,72 @@ export function bootstrapApp() {
     };
 
     switch (algoName) {
-      case 'dijkstra': currentAlgorithmGenerator = dijkstra(options); break;
-      case 'astar': currentAlgorithmGenerator = astar(options); break;
-      case 'jps': currentAlgorithmGenerator = jps(options); break;
-      case 'bidirectional': currentAlgorithmGenerator = bidirectional(options); break;
-      case 'bfs': currentAlgorithmGenerator = bfs(options); break;
-      case 'dfs': currentAlgorithmGenerator = dfs(options); break;
+      case 'dijkstra':
+        return dijkstra(options);
+      case 'astar':
+        return astar(options);
+      case 'jps':
+        return jps(options);
+      case 'bidirectional':
+        return bidirectional(options);
+      case 'bfs':
+        return bfs(options);
+      case 'dfs':
+        return dfs(options);
+      default:
+        return astar(options);
     }
-
-    isRunning = true;
-    isPaused = false;
-    setStatus('RUNNING');
-    btnVisualize.innerHTML = '<span class="btn-icon">⏸</span><span>Pause</span>';
-    btnPause.disabled = false;
-    btnStep.disabled = true;
-
-    algorithmStartTime = performance.now();
-    runAnimationLoop();
   }
 
-  function pauseVisualization() {
-    isPaused = true;
-    setStatus('PAUSED');
-    btnVisualize.innerHTML = '<span class="btn-icon">▶</span><span>Resume</span>';
-    btnStep.disabled = false;
-  }
-
-  function resumeVisualization() {
-    isPaused = false;
-    setStatus('RUNNING');
-    btnVisualize.innerHTML = '<span class="btn-icon">⏸</span><span>Pause</span>';
-    btnStep.disabled = true;
-    runAnimationLoop();
-  }
-
-  function stopVisualization() {
-    if (animFrameId !== null) {
-      cancelAnimationFrame(animFrameId);
-      animFrameId = null;
+  // --- Algorithm Execution Actions ---
+  function startVisualization() {
+    if (runner.isRunning) {
+      runner.pause();
+      return;
     }
-    isRunning = false;
-    isPaused = false;
-    currentAlgorithmGenerator = null;
-    currentMazeGenerator = null;
-    btnVisualize.innerHTML = '<span class="btn-icon">▶</span><span>Visualize</span>';
-    btnPause.disabled = true;
-    btnStep.disabled = true;
-  }
-
-  function runAnimationLoop() {
-    if (!isRunning || isPaused || !currentAlgorithmGenerator) return;
-
-    const stepsPerFrame = getStepsPerBatch();
-    let done = false;
-    let summary: SearchSummary | undefined;
-
-    for (let i = 0; i < stepsPerFrame; i++) {
-      const next = currentAlgorithmGenerator.next();
-      if (next.done) {
-        done = true;
-        summary = next.value;
-        break;
-      }
-
-      const event: StepEvent = next.value;
-      if (event.type === 'VISIT') {
-        exploredCount++;
-        renderer.addVisited({ coord: event.coord, direction: event.direction });
-      } else if (event.type === 'PATH_STEP') {
-        currentPath.push(event.coord);
-        renderer.setPath(currentPath);
-      }
-    }
-
-    const elapsed = performance.now() - algorithmStartTime;
-    updateHUD(exploredCount, summary?.cost ?? 0, elapsed);
-    renderer.render();
-
-    if (done && summary) {
-      stopVisualization();
-      setStatus(summary.found ? 'FINISHED' : 'NO PATH');
-      updateHUD(summary.nodesExplored, summary.cost, summary.durationMs);
-      renderer.render();
+    if (runner.isPaused) {
+      runner.resume();
       return;
     }
 
-    animFrameId = requestAnimationFrame(runAnimationLoop);
+    renderer.clearVisited();
+    currentPath.length = 0;
+    renderer.render();
+
+    const gen = createAlgorithmGenerator();
+    runner.load(gen);
+    runner.play();
   }
 
   function stepForward() {
-    if (!currentAlgorithmGenerator) return;
-
-    const next = currentAlgorithmGenerator.next();
-    if (next.done) {
-      stopVisualization();
-      setStatus(next.value.found ? 'FINISHED' : 'NO PATH');
-      updateHUD(next.value.nodesExplored, next.value.cost, next.value.durationMs);
+    if (runner.isIdle) {
+      renderer.clearVisited();
+      currentPath.length = 0;
       renderer.render();
-      return;
+      const gen = createAlgorithmGenerator();
+      runner.load(gen);
     }
-
-    const event: StepEvent = next.value;
-    if (event.type === 'VISIT') {
-      exploredCount++;
-      renderer.addVisited({ coord: event.coord, direction: event.direction });
-    } else if (event.type === 'PATH_STEP') {
-      currentPath.push(event.coord);
-      renderer.setPath(currentPath);
-    }
-
-    updateHUD(exploredCount, event.cost ?? 0, performance.now() - algorithmStartTime);
-    renderer.render();
+    runner.stepForward();
   }
 
+  function stepBackward() {
+    runner.stepBackward();
+  }
+
+  // --- Timeline Scrubber Listener ---
+  timelineScrubber?.addEventListener('input', () => {
+    const targetStep = parseInt(timelineScrubber.value, 10);
+    runner.seek(targetStep - 1);
+  });
+
   // --- Maze Generation ---
-  mazeSelect.addEventListener('change', () => {
+  let currentMazeGenerator: MazeGenerator | null = null;
+
+  mazeSelect?.addEventListener('change', () => {
     const mazeType = mazeSelect.value;
     if (!mazeType) return;
 
-    stopVisualization();
+    runner.reset();
     grid.reset(false);
     renderer.clearVisited();
     currentPath.length = 0;
@@ -355,10 +435,18 @@ export function bootstrapApp() {
     const options = { grid, start: startCoord, target: targetCoord };
 
     switch (mazeType) {
-      case 'recursiveDivision': currentMazeGenerator = recursiveDivision(options); break;
-      case 'kruskal': currentMazeGenerator = kruskal(options); break;
-      case 'prim': currentMazeGenerator = prim(options); break;
-      case 'perlin': currentMazeGenerator = perlinTerrain(options); break;
+      case 'recursiveDivision':
+        currentMazeGenerator = recursiveDivision(options);
+        break;
+      case 'kruskal':
+        currentMazeGenerator = kruskal(options);
+        break;
+      case 'prim':
+        currentMazeGenerator = prim(options);
+        break;
+      case 'perlin':
+        currentMazeGenerator = perlinTerrain(options);
+        break;
     }
 
     setStatus('RUNNING');
@@ -403,31 +491,24 @@ export function bootstrapApp() {
   }
 
   // --- Action Listeners ---
-  btnVisualize.addEventListener('click', startVisualization);
-  btnPause.addEventListener('click', () => {
-    if (isPaused) resumeVisualization();
-    else pauseVisualization();
+  btnVisualize?.addEventListener('click', startVisualization);
+  btnPause?.addEventListener('click', () => {
+    runner.togglePlay();
   });
-  btnStep.addEventListener('click', stepForward);
+  btnStep?.addEventListener('click', stepForward);
+  btnStepBack?.addEventListener('click', stepBackward);
 
-  btnClearPath.addEventListener('click', () => {
-    stopVisualization();
-    renderer.clearVisited();
-    currentPath.length = 0;
-    setStatus('READY');
-    updateHUD(0, 0, 0);
-    renderer.render();
+  btnClearPath?.addEventListener('click', () => {
+    runner.reset();
   });
 
-  btnClearAll.addEventListener('click', () => {
-    stopVisualization();
+  btnClearAll?.addEventListener('click', () => {
+    runner.reset();
     grid.reset(false);
     grid.setCellType(startCoord, 'start');
     grid.setCellType(targetCoord, 'target');
     renderer.clearVisited();
     currentPath.length = 0;
-    setStatus('READY');
-    updateHUD(0, 0, 0);
     renderer.render();
   });
 
@@ -441,7 +522,16 @@ export function bootstrapApp() {
         startVisualization();
         break;
       case 's':
-        if (isPaused) stepForward();
+        stepForward();
+        break;
+      case 'a':
+        stepBackward();
+        break;
+      case 'arrowright':
+        stepForward();
+        break;
+      case 'arrowleft':
+        stepBackward();
         break;
       case 'w':
         setActiveBrush('wall');
@@ -453,7 +543,7 @@ export function bootstrapApp() {
         setActiveBrush('erase');
         break;
       case 'c':
-        btnClearAll.click();
+        btnClearAll?.click();
         break;
     }
   });
@@ -467,4 +557,3 @@ if (typeof document !== 'undefined') {
     bootstrapApp();
   }
 }
-

@@ -109,15 +109,31 @@
           <button id="btnPause" class="btn btn-secondary" title="Pause / Resume" disabled>
             <span class="btn-icon">⏸</span>
           </button>
-          <button id="btnStep" class="btn btn-secondary" title="Step Forward (S)" disabled>
-            <span class="btn-icon">⏭</span>
-          </button>
           <button id="btnClearPath" class="btn btn-secondary" title="Clear Path & Visited">
             <span>Clear Path</span>
           </button>
           <button id="btnClearAll" class="btn btn-secondary" title="Clear Entire Board (C)">
             <span>Clear Map</span>
           </button>
+        </div>
+
+        <div class="toolbar-divider"></div>
+
+        <!-- Timeline Scrubber Controls -->
+        <div class="toolbar-group timeline-group">
+          <label class="control-label" for="timelineScrubber">Search Timeline</label>
+          <div class="timeline-container">
+            <button id="btnStepBack" class="btn btn-secondary btn-icon-only" title="Step Backward (A / Left)" disabled>
+              <span class="btn-icon">⏮</span>
+            </button>
+            <button id="btnStep" class="btn btn-secondary btn-icon-only" title="Step Forward (S / Right)">
+              <span class="btn-icon">⏭</span>
+            </button>
+            <div class="timeline-slider-wrapper">
+              <input type="range" id="timelineScrubber" min="0" max="0" value="0" class="styled-slider timeline-slider" disabled />
+            </div>
+            <span id="scrubberStep" class="scrubber-step">0 / 0</span>
+          </div>
         </div>
 
         <div class="toolbar-divider"></div>
