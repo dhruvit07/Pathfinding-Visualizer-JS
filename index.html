@@ -36,6 +36,7 @@
         </div>
 
         <nav class="nav-links">
+          <button id="btnToggleArena" class="btn btn-secondary btn-arena" title="Toggle Split-Screen Head-to-Head Arena">⚔️ Arena Mode</button>
           <a class="legacy-link" href="legacy-v1/index.html" title="Open the original college project">
             <span>🏛️</span>
             <span>View Legacy v1</span>
@@ -64,6 +65,16 @@
             <option value="euclidean">Euclidean</option>
             <option value="chebyshev">Chebyshev</option>
             <option value="octile">Octile (8-way)</option>
+          </select>
+        </div>
+
+        <div class="toolbar-group arena-matchup-group" id="arenaMatchupGroup" style="display: none;">
+          <label class="control-label" for="presetMatchups">Matchup Preset</label>
+          <select id="presetMatchups" class="styled-select">
+            <option value="" disabled selected>Preset Matchup...</option>
+            <option value="astar-vs-dijkstra">A* (Manhattan) vs Dijkstra</option>
+            <option value="jps-vs-astar">Jump Point Search (JPS) vs A*</option>
+            <option value="bfs-vs-bidirectional">BFS vs Bidirectional Search</option>
           </select>
         </div>
 
@@ -152,6 +163,82 @@
       <!-- Main Canvas Viewport -->
       <main class="canvas-viewport" id="canvasViewport">
         <canvas id="gridCanvas"></canvas>
+
+        <!-- Arena Dual Split-Screen Viewport -->
+        <div class="arena-container" id="arenaContainer" style="display: none;">
+          <!-- Floating Head-to-Head Comparative HUD Banner -->
+          <div class="arena-hud-banner" id="arenaComparativeHUD">
+            <div class="arena-hud-header">
+              <span class="arena-hud-badge">⚔️ HEAD-TO-HEAD ARENA</span>
+              <span class="arena-hud-matchup" id="arenaHUDMatchup">A* (Manhattan) vs Dijkstra</span>
+            </div>
+            <div class="arena-hud-body">
+              <div class="arena-hud-message" id="arenaComparisonText">Ready for algorithm battle! Press Visualize to start the race.</div>
+              <div class="arena-hud-metrics" id="arenaHUDMetrics" style="display: none;">
+                <span class="arena-metric-item" id="metricExploredDelta">Explored Δ: <b>0</b></span>
+                <span class="arena-metric-sep">•</span>
+                <span class="arena-metric-item" id="metricTimeDelta">Time Δ: <b>0.0 ms</b></span>
+                <span class="arena-metric-sep">•</span>
+                <span class="arena-metric-item" id="metricCostEquality">Path Cost: <b id="metricCostMatch">Equal</b></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Dual Split Panels -->
+          <div class="arena-split-view">
+            <!-- Panel A (Left) -->
+            <div class="arena-panel arena-panel-a" id="arenaPanelA">
+              <div class="arena-panel-header">
+                <div class="arena-panel-tag tag-a">
+                  <span class="arena-panel-dot dot-a"></span>
+                  <span>PANEL A</span>
+                </div>
+                <select id="arenaAlgoA" class="styled-select arena-algo-select">
+                  <option value="astar" selected>A* Search (Manhattan)</option>
+                  <option value="dijkstra">Dijkstra's Algorithm</option>
+                  <option value="jps">Jump Point Search (JPS)</option>
+                  <option value="bidirectional">Bidirectional Search</option>
+                  <option value="bfs">Breadth-First Search (BFS)</option>
+                  <option value="dfs">Depth-First Search (DFS)</option>
+                </select>
+                <div class="arena-mini-stats" id="arenaStatsA">
+                  <span class="mini-stat">Nodes: <b id="statExploredA">0</b></span>
+                  <span class="mini-stat">Cost: <b id="statCostA">0</b></span>
+                  <span class="mini-stat">Time: <b id="statTimeA">0.0 ms</b></span>
+                </div>
+              </div>
+              <div class="arena-canvas-wrapper">
+                <canvas id="canvasA"></canvas>
+              </div>
+            </div>
+
+            <!-- Panel B (Right) -->
+            <div class="arena-panel arena-panel-b" id="arenaPanelB">
+              <div class="arena-panel-header">
+                <div class="arena-panel-tag tag-b">
+                  <span class="arena-panel-dot dot-b"></span>
+                  <span>PANEL B</span>
+                </div>
+                <select id="arenaAlgoB" class="styled-select arena-algo-select">
+                  <option value="astar">A* Search (Manhattan)</option>
+                  <option value="dijkstra" selected>Dijkstra's Algorithm</option>
+                  <option value="jps">Jump Point Search (JPS)</option>
+                  <option value="bidirectional">Bidirectional Search</option>
+                  <option value="bfs">Breadth-First Search (BFS)</option>
+                  <option value="dfs">Depth-First Search (DFS)</option>
+                </select>
+                <div class="arena-mini-stats" id="arenaStatsB">
+                  <span class="mini-stat">Nodes: <b id="statExploredB">0</b></span>
+                  <span class="mini-stat">Cost: <b id="statCostB">0</b></span>
+                  <span class="mini-stat">Time: <b id="statTimeB">0.0 ms</b></span>
+                </div>
+              </div>
+              <div class="arena-canvas-wrapper">
+                <canvas id="canvasB"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
 
         <!-- Floating Legend Overlay -->
         <div class="legend-panel">

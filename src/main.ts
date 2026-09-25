@@ -18,6 +18,7 @@ import {
 import { recursiveDivision, kruskal, prim, perlinTerrain, MazeGenerator } from './core/mazes';
 import { CanvasRenderer, InteractionHandler, BrushMode, getTheme } from './renderer';
 import { SimulationRunner, SimulationState, HistoryBuffer, TelemetryData } from './engine';
+import { ArenaManager, ARENA_PRESETS, AlgorithmType } from './ui';
 
 export const APP_INFO = {
   name: 'Pathfinding Visualizer',
@@ -79,6 +80,32 @@ export function bootstrapApp() {
   const hudExplored = document.getElementById('hudExplored') as HTMLElement;
   const hudCost = document.getElementById('hudCost') as HTMLElement;
   const hudTime = document.getElementById('hudTime') as HTMLElement;
+
+  // --- Arena Mode UI Elements ---
+  const btnToggleArena = document.getElementById('btnToggleArena') as HTMLButtonElement;
+  const arenaContainer = document.getElementById('arenaContainer') as HTMLElement;
+  const arenaMatchupGroup = document.getElementById('arenaMatchupGroup') as HTMLElement;
+  const presetMatchups = document.getElementById('presetMatchups') as HTMLSelectElement;
+
+  const canvasA = document.getElementById('canvasA') as HTMLCanvasElement;
+  const canvasB = document.getElementById('canvasB') as HTMLCanvasElement;
+  const arenaAlgoA = document.getElementById('arenaAlgoA') as HTMLSelectElement;
+  const arenaAlgoB = document.getElementById('arenaAlgoB') as HTMLSelectElement;
+
+  const arenaHUDMatchup = document.getElementById('arenaHUDMatchup') as HTMLElement;
+  const arenaComparisonText = document.getElementById('arenaComparisonText') as HTMLElement;
+  const arenaHUDMetrics = document.getElementById('arenaHUDMetrics') as HTMLElement;
+  const metricExploredDelta = document.getElementById('metricExploredDelta') as HTMLElement;
+  const metricTimeDelta = document.getElementById('metricTimeDelta') as HTMLElement;
+  const metricCostMatch = document.getElementById('metricCostMatch') as HTMLElement;
+
+  const statExploredA = document.getElementById('statExploredA') as HTMLElement;
+  const statCostA = document.getElementById('statCostA') as HTMLElement;
+  const statTimeA = document.getElementById('statTimeA') as HTMLElement;
+
+  const statExploredB = document.getElementById('statExploredB') as HTMLElement;
+  const statCostB = document.getElementById('statCostB') as HTMLElement;
+  const statTimeB = document.getElementById('statTimeB') as HTMLElement;
 
   // --- Speed Settings Helper ---
   function getStepsPerBatch(): number {
@@ -257,6 +284,110 @@ export function bootstrapApp() {
     },
   });
 
+  // --- Arena Mode Orchestrator ---
+  const arenaManager = new ArenaManager({
+    grid,
+    start: startCoord,
+    target: targetCoord,
+    onStateChange: (stateA, stateB) => {
+      if (!arenaManager.isArenaMode) return;
+      const isRunning = stateA === 'RUNNING' || stateB === 'RUNNING';
+      const isPaused = (stateA === 'PAUSED' || stateB === 'PAUSED') && !isRunning;
+      const isFinished =
+        (stateA === 'FINISHED' || stateA === 'NO_PATH') &&
+        (stateB === 'FINISHED' || stateB === 'NO_PATH');
+
+      if (isRunning) {
+        setStatus('RUNNING');
+        btnVisualize.innerHTML = '<span class="btn-icon">⏸</span><span>Pause Race</span>';
+        btnPause.disabled = false;
+        btnPause.innerHTML = '<span class="btn-icon">⏸</span>';
+      } else if (isPaused) {
+        setStatus('PAUSED');
+        btnVisualize.innerHTML = '<span class="btn-icon">▶</span><span>Resume Race</span>';
+        btnPause.disabled = false;
+        btnPause.innerHTML = '<span class="btn-icon">▶</span>';
+      } else if (isFinished) {
+        setStatus('FINISHED');
+        btnVisualize.innerHTML = '<span class="btn-icon">▶</span><span>Race Again</span>';
+        btnPause.disabled = true;
+      } else {
+        setStatus('READY');
+        btnVisualize.innerHTML = '<span class="btn-icon">▶</span><span>Start Race</span>';
+        btnPause.disabled = true;
+      }
+    },
+    onTelemetryA: (data) => {
+      if (statExploredA) statExploredA.textContent = data.nodesExplored.toString();
+      if (statCostA) statCostA.textContent = data.pathCost === Infinity ? '∞' : data.pathCost.toString();
+      if (statTimeA) statTimeA.textContent = `${data.durationMs.toFixed(1)} ms`;
+      if (arenaManager.isRaceActive() && arenaComparisonText) {
+        const explA = data.nodesExplored;
+        const explB = arenaManager.runnerB.telemetry.nodesExplored;
+        arenaComparisonText.textContent = `Race in progress: ${arenaManager.algoA.name} (${explA} nodes) vs ${arenaManager.algoB.name} (${explB} nodes)...`;
+      }
+    },
+    onTelemetryB: (data) => {
+      if (statExploredB) statExploredB.textContent = data.nodesExplored.toString();
+      if (statCostB) statCostB.textContent = data.pathCost === Infinity ? '∞' : data.pathCost.toString();
+      if (statTimeB) statTimeB.textContent = `${data.durationMs.toFixed(1)} ms`;
+      if (arenaManager.isRaceActive() && arenaComparisonText) {
+        const explA = arenaManager.runnerA.telemetry.nodesExplored;
+        const explB = data.nodesExplored;
+        arenaComparisonText.textContent = `Race in progress: ${arenaManager.algoA.name} (${explA} nodes) vs ${arenaManager.algoB.name} (${explB} nodes)...`;
+      }
+    },
+    onRaceStart: () => {
+      if (arenaHUDMetrics) arenaHUDMetrics.style.display = 'none';
+      if (arenaComparisonText) {
+        arenaComparisonText.textContent = `Race started! ${arenaManager.algoA.name} vs ${arenaManager.algoB.name}...`;
+      }
+    },
+    onRaceFinish: (stats) => {
+      if (arenaComparisonText) {
+        arenaComparisonText.textContent = stats.message;
+      }
+      if (arenaHUDMetrics) {
+        arenaHUDMetrics.style.display = 'flex';
+        if (metricExploredDelta) {
+          const sign = stats.nodesExploredDelta > 0 ? '+' : '';
+          metricExploredDelta.innerHTML = `Explored Δ: <b>${sign}${stats.nodesExploredDelta}</b>`;
+        }
+        if (metricTimeDelta) {
+          const sign = stats.timeDeltaMs > 0 ? '+' : '';
+          metricTimeDelta.innerHTML = `Time Δ: <b>${sign}${stats.timeDeltaMs} ms</b>`;
+        }
+        if (metricCostMatch) {
+          metricCostMatch.textContent = stats.isCostEqual
+            ? `Optimal Match (${stats.costA})`
+            : `Cost Δ: ${stats.costDelta}`;
+          metricCostMatch.style.color = stats.isCostEqual ? 'var(--accent-emerald)' : 'var(--accent-amber)';
+        }
+      }
+    },
+    onRaceReset: () => {
+      if (arenaHUDMetrics) arenaHUDMetrics.style.display = 'none';
+      if (arenaComparisonText) {
+        arenaComparisonText.textContent = `Ready for algorithm battle! Press Start Race to begin.`;
+      }
+      if (statExploredA) statExploredA.textContent = '0';
+      if (statCostA) statCostA.textContent = '0';
+      if (statTimeA) statTimeA.textContent = '0.0 ms';
+      if (statExploredB) statExploredB.textContent = '0';
+      if (statCostB) statCostB.textContent = '0';
+      if (statTimeB) statTimeB.textContent = '0.0 ms';
+    },
+    onEndpointChange: (type, newCoord) => {
+      if (type === 'start') startCoord = newCoord;
+      else if (type === 'target') targetCoord = newCoord;
+      renderer.setEndpoints(startCoord, targetCoord);
+    },
+  });
+
+  if (canvasA && canvasB) {
+    arenaManager.attachCanvases(canvasA, canvasB);
+  }
+
   // --- InteractionHandler ---
   const interactionHandler = new InteractionHandler({
     camera: renderer.camera,
@@ -279,6 +410,9 @@ export function bootstrapApp() {
         else if (brush === 'erase') grid.setCellType(c, 'empty');
       }
       renderer.render();
+      if (arenaManager.isArenaMode) {
+        arenaManager.synchronizeRenderers();
+      }
     },
     onEndpointMove: (type, newCoord, oldCoord) => {
       if (runner.isRunning) {
@@ -294,6 +428,7 @@ export function bootstrapApp() {
       }
       renderer.setEndpoints(startCoord, targetCoord);
       renderer.render();
+      arenaManager.setEndpoints(startCoord, targetCoord);
     },
     onCameraChange: () => renderer.render(),
     onHoverChange: (coord) => renderer.setHoverCoord(coord),
@@ -312,6 +447,9 @@ export function bootstrapApp() {
   window.addEventListener('resize', () => {
     renderer.resize();
     renderer.render();
+    if (arenaManager.isArenaMode) {
+      arenaManager.fitGrid(20);
+    }
   });
 
   // Heuristic dropdown visibility
@@ -325,6 +463,7 @@ export function bootstrapApp() {
   // Brush selector
   function setActiveBrush(brush: BrushMode) {
     interactionHandler.brush = brush;
+    arenaManager.setBrush(brush);
     btnBrushWall?.classList.toggle('active', brush === 'wall');
     btnBrushWeight?.classList.toggle('active', brush === 'weight');
     btnBrushErase?.classList.toggle('active', brush === 'erase');
@@ -338,12 +477,125 @@ export function bootstrapApp() {
   speedRange?.addEventListener('input', () => {
     const batch = getStepsPerBatch();
     runner.setSpeed(batch);
+    arenaManager.setSpeed(batch);
   });
 
   // Theme switcher
   themeSelect?.addEventListener('change', () => {
-    renderer.setTheme(getTheme(themeSelect.value));
+    const theme = getTheme(themeSelect.value);
+    renderer.setTheme(theme);
     renderer.render();
+    arenaManager.rendererA.setTheme(theme);
+    arenaManager.rendererB.setTheme(theme);
+    arenaManager.rendererA.render();
+    arenaManager.rendererB.render();
+  });
+
+  // --- Arena Mode Toggle & Control Handlers ---
+  function toggleArenaMode() {
+    const willBeArena = !arenaManager.isArenaMode;
+    arenaManager.toggleArenaMode(willBeArena);
+
+    if (willBeArena) {
+      if (runner.isRunning) runner.pause();
+      runner.reset();
+
+      canvas.style.display = 'none';
+      if (arenaContainer) {
+        arenaContainer.style.display = 'flex';
+        arenaContainer.classList.add('active');
+      }
+      if (btnToggleArena) {
+        btnToggleArena.classList.add('active');
+        btnToggleArena.innerHTML = '<span>⚔️ Single Mode</span>';
+      }
+
+      if (arenaMatchupGroup) arenaMatchupGroup.style.display = 'flex';
+      const algoGroup = algorithmSelect?.closest('.toolbar-group') as HTMLElement;
+      if (algoGroup) algoGroup.style.display = 'none';
+      if (heuristicGroup) heuristicGroup.style.display = 'none';
+      const timelineGroup = timelineScrubber?.closest('.toolbar-group') as HTMLElement;
+      if (timelineGroup) timelineGroup.style.display = 'none';
+
+      btnVisualize.innerHTML = '<span class="btn-icon">▶</span><span>Start Race</span>';
+      btnPause.disabled = true;
+
+      arenaManager.setEndpoints(startCoord, targetCoord);
+      arenaManager.synchronizeRenderers();
+
+      requestAnimationFrame(() => {
+        arenaManager.fitGrid(20);
+      });
+      setStatus('READY');
+    } else {
+      arenaManager.resetRace();
+
+      if (arenaContainer) {
+        arenaContainer.style.display = 'none';
+        arenaContainer.classList.remove('active');
+      }
+      canvas.style.display = 'block';
+      if (btnToggleArena) {
+        btnToggleArena.classList.remove('active');
+        btnToggleArena.innerHTML = '<span>⚔️ Arena Mode</span>';
+      }
+
+      if (arenaMatchupGroup) arenaMatchupGroup.style.display = 'none';
+      const algoGroup = algorithmSelect?.closest('.toolbar-group') as HTMLElement;
+      if (algoGroup) algoGroup.style.display = 'flex';
+      if (heuristicGroup) {
+        heuristicGroup.style.display =
+          algorithmSelect.value === 'astar' || algorithmSelect.value === 'jps' ? 'flex' : 'none';
+      }
+      const timelineGroup = timelineScrubber?.closest('.toolbar-group') as HTMLElement;
+      if (timelineGroup) timelineGroup.style.display = 'flex';
+
+      renderer.setGrid(grid);
+      renderer.setEndpoints(startCoord, targetCoord);
+      renderer.resize();
+      renderer.fitGrid(32);
+      renderer.render();
+
+      btnVisualize.innerHTML = '<span class="btn-icon">▶</span><span>Visualize</span>';
+      btnPause.disabled = true;
+      setStatus('READY');
+    }
+  }
+
+  btnToggleArena?.addEventListener('click', toggleArenaMode);
+
+  presetMatchups?.addEventListener('change', () => {
+    const presetId = presetMatchups.value;
+    if (!presetId) return;
+
+    arenaManager.loadPreset(presetId);
+    if (arenaAlgoA) arenaAlgoA.value = arenaManager.algoA.algorithm;
+    if (arenaAlgoB) arenaAlgoB.value = arenaManager.algoB.algorithm;
+    if (arenaHUDMatchup) {
+      const preset = ARENA_PRESETS.find((p) => p.id === presetId);
+      arenaHUDMatchup.textContent = preset?.name ?? `${arenaManager.algoA.name} vs ${arenaManager.algoB.name}`;
+    }
+    if (arenaComparisonText) {
+      arenaComparisonText.textContent = `Preset loaded: ${arenaManager.algoA.name} vs ${arenaManager.algoB.name}. Click Start Race!`;
+    }
+  });
+
+  arenaAlgoA?.addEventListener('change', () => {
+    arenaManager.setAlgorithmA(arenaAlgoA.value as AlgorithmType);
+    if (presetMatchups) presetMatchups.selectedIndex = 0;
+    if (arenaHUDMatchup) arenaHUDMatchup.textContent = `${arenaManager.algoA.name} vs ${arenaManager.algoB.name}`;
+    if (arenaComparisonText) {
+      arenaComparisonText.textContent = `Matchup updated: ${arenaManager.algoA.name} vs ${arenaManager.algoB.name}. Click Start Race!`;
+    }
+  });
+
+  arenaAlgoB?.addEventListener('change', () => {
+    arenaManager.setAlgorithmB(arenaAlgoB.value as AlgorithmType);
+    if (presetMatchups) presetMatchups.selectedIndex = 0;
+    if (arenaHUDMatchup) arenaHUDMatchup.textContent = `${arenaManager.algoA.name} vs ${arenaManager.algoB.name}`;
+    if (arenaComparisonText) {
+      arenaComparisonText.textContent = `Matchup updated: ${arenaManager.algoA.name} vs ${arenaManager.algoB.name}. Click Start Race!`;
+    }
   });
 
   // --- Algorithm Generator Creation ---
@@ -377,6 +629,19 @@ export function bootstrapApp() {
 
   // --- Algorithm Execution Actions ---
   function startVisualization() {
+    if (arenaManager.isArenaMode) {
+      if (arenaManager.isRaceActive()) {
+        arenaManager.pauseRace();
+        return;
+      }
+      if (arenaManager.runnerA.isPaused || arenaManager.runnerB.isPaused) {
+        arenaManager.resumeRace();
+        return;
+      }
+      arenaManager.startRace();
+      return;
+    }
+
     if (runner.isRunning) {
       runner.pause();
       return;
@@ -480,6 +745,9 @@ export function bootstrapApp() {
     grid.setCellType(startCoord, 'start');
     grid.setCellType(targetCoord, 'target');
     renderer.render();
+    if (arenaManager.isArenaMode) {
+      arenaManager.synchronizeRenderers();
+    }
 
     if (done) {
       currentMazeGenerator = null;
@@ -493,16 +761,32 @@ export function bootstrapApp() {
   // --- Action Listeners ---
   btnVisualize?.addEventListener('click', startVisualization);
   btnPause?.addEventListener('click', () => {
+    if (arenaManager.isArenaMode) {
+      if (arenaManager.isRaceActive()) {
+        arenaManager.pauseRace();
+      } else {
+        arenaManager.resumeRace();
+      }
+      return;
+    }
     runner.togglePlay();
   });
   btnStep?.addEventListener('click', stepForward);
   btnStepBack?.addEventListener('click', stepBackward);
 
   btnClearPath?.addEventListener('click', () => {
+    if (arenaManager.isArenaMode) {
+      arenaManager.resetRace();
+      return;
+    }
     runner.reset();
   });
 
   btnClearAll?.addEventListener('click', () => {
+    if (arenaManager.isArenaMode) {
+      arenaManager.clearWallsAndWeights();
+      return;
+    }
     runner.reset();
     grid.reset(false);
     grid.setCellType(startCoord, 'start');
