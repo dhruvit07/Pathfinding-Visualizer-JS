@@ -1,6 +1,6 @@
 import { Grid } from '../core/grid/Grid';
 import { Coord, coordKey } from '../core/grid/Coordinates';
-import { Theme, CYBERPUNK_THEME } from './Theme';
+import { Theme, CYBERPUNK_THEME, getThemeGradients } from './Theme';
 import { Camera } from './Camera';
 
 export interface VisitedNodeInfo {
@@ -354,23 +354,37 @@ export class CanvasRenderer {
             w.y * cellSize + 0.5,
             cellSize - 1,
             cellSize - 1,
-            Math.max(1, cellSize * 0.12)
+            Math.max(1.5, cellSize * 0.16)
           );
         }
         ctx.fill();
       }
 
-      // Batch render weights
+      // Batch render weights with elevation contour styling
       for (const wt of weights) {
+        // Elevation base contour
+        ctx.fillStyle = theme.weightBorder || 'rgba(139, 92, 246, 0.35)';
+        ctx.beginPath();
+        drawRoundedRect(
+          ctx,
+          wt.coord.x * cellSize + 1,
+          wt.coord.y * cellSize + 1,
+          cellSize - 2,
+          cellSize - 2,
+          Math.max(2, cellSize * 0.22)
+        );
+        ctx.fill();
+
+        // Inner elevated terrain block
         ctx.fillStyle = theme.weight;
         ctx.beginPath();
         drawRoundedRect(
           ctx,
-          wt.coord.x * cellSize + 1.5,
-          wt.coord.y * cellSize + 1.5,
-          cellSize - 3,
-          cellSize - 3,
-          Math.max(2, cellSize * 0.18)
+          wt.coord.x * cellSize + 2.5,
+          wt.coord.y * cellSize + 2.5,
+          cellSize - 5,
+          cellSize - 5,
+          Math.max(2, cellSize * 0.15)
         );
         ctx.fill();
 
@@ -388,7 +402,7 @@ export class CanvasRenderer {
         }
       }
 
-      // 4. Visited cells pass
+      // 4. Visited cells pass with radiant gradient cohorts
       const forwardVisited: Coord[] = [];
       const backwardVisited: Coord[] = [];
 
@@ -410,36 +424,92 @@ export class CanvasRenderer {
         }
       }
 
+      const themeGradients = getThemeGradients(theme);
+
+      // Forward visited nodes with radiant gradient transitions
       if (forwardVisited.length > 0) {
-        ctx.fillStyle = theme.visitedForward || theme.visited;
-        ctx.beginPath();
-        for (const v of forwardVisited) {
-          drawRoundedRect(
-            ctx,
-            v.x * cellSize + 1,
-            v.y * cellSize + 1,
-            cellSize - 2,
-            cellSize - 2,
-            Math.max(1, cellSize * 0.1)
-          );
+        const gradient = themeGradients.forward;
+        if (gradient && gradient.length > 1 && forwardVisited.length > 1) {
+          const cohortCount = gradient.length;
+          const cohortSize = Math.ceil(forwardVisited.length / cohortCount);
+          for (let g = 0; g < cohortCount; g++) {
+            const startIdx = g * cohortSize;
+            const endIdx = Math.min(forwardVisited.length, (g + 1) * cohortSize);
+            if (startIdx >= endIdx) break;
+
+            ctx.fillStyle = gradient[g];
+            ctx.beginPath();
+            for (let i = startIdx; i < endIdx; i++) {
+              const v = forwardVisited[i];
+              drawRoundedRect(
+                ctx,
+                v.x * cellSize + 1,
+                v.y * cellSize + 1,
+                cellSize - 2,
+                cellSize - 2,
+                Math.max(1, cellSize * 0.12)
+              );
+            }
+            ctx.fill();
+          }
+        } else {
+          ctx.fillStyle = theme.visitedForward || theme.visited;
+          ctx.beginPath();
+          for (const v of forwardVisited) {
+            drawRoundedRect(
+              ctx,
+              v.x * cellSize + 1,
+              v.y * cellSize + 1,
+              cellSize - 2,
+              cellSize - 2,
+              Math.max(1, cellSize * 0.12)
+            );
+          }
+          ctx.fill();
         }
-        ctx.fill();
       }
 
+      // Backward visited nodes with radiant gradient transitions
       if (backwardVisited.length > 0) {
-        ctx.fillStyle = theme.visitedBackward;
-        ctx.beginPath();
-        for (const v of backwardVisited) {
-          drawRoundedRect(
-            ctx,
-            v.x * cellSize + 1,
-            v.y * cellSize + 1,
-            cellSize - 2,
-            cellSize - 2,
-            Math.max(1, cellSize * 0.1)
-          );
+        const bgGradient = themeGradients.backward;
+        if (bgGradient && bgGradient.length > 1 && backwardVisited.length > 1) {
+          const cohortCount = bgGradient.length;
+          const cohortSize = Math.ceil(backwardVisited.length / cohortCount);
+          for (let g = 0; g < cohortCount; g++) {
+            const startIdx = g * cohortSize;
+            const endIdx = Math.min(backwardVisited.length, (g + 1) * cohortSize);
+            if (startIdx >= endIdx) break;
+
+            ctx.fillStyle = bgGradient[g];
+            ctx.beginPath();
+            for (let i = startIdx; i < endIdx; i++) {
+              const v = backwardVisited[i];
+              drawRoundedRect(
+                ctx,
+                v.x * cellSize + 1,
+                v.y * cellSize + 1,
+                cellSize - 2,
+                cellSize - 2,
+                Math.max(1, cellSize * 0.12)
+              );
+            }
+            ctx.fill();
+          }
+        } else {
+          ctx.fillStyle = theme.visitedBackward;
+          ctx.beginPath();
+          for (const v of backwardVisited) {
+            drawRoundedRect(
+              ctx,
+              v.x * cellSize + 1,
+              v.y * cellSize + 1,
+              cellSize - 2,
+              cellSize - 2,
+              Math.max(1, cellSize * 0.12)
+            );
+          }
+          ctx.fill();
         }
-        ctx.fill();
       }
 
       // Frontier nodes pass
@@ -486,7 +556,7 @@ export class CanvasRenderer {
       }
       ctx.stroke();
 
-      // 5. Shortest path pass
+      // 5. Shortest path pass - Radiant Multi-Stage Laser Beam
       if (this.path.length > 0) {
         // Path tile highlight
         ctx.fillStyle = theme.pathGlow;
@@ -499,13 +569,13 @@ export class CanvasRenderer {
               p.y * cellSize + 2,
               cellSize - 4,
               cellSize - 4,
-              Math.max(2, cellSize * 0.15)
+              Math.max(2, cellSize * 0.18)
             );
           }
         }
         ctx.fill();
 
-        // Connected glowing vector line
+        // Connected laser vector line with multi-layer bloom
         ctx.save();
         ctx.beginPath();
         const p0 = this.path[0];
@@ -514,18 +584,29 @@ export class CanvasRenderer {
           const pt = this.path[i];
           ctx.lineTo((pt.x + 0.5) * cellSize, (pt.y + 0.5) * cellSize);
         }
-
-        // Outer glow
-        ctx.strokeStyle = theme.pathGlow;
-        ctx.lineWidth = Math.max(3, cellSize * 0.5);
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
+
+        // Stage 1: Ambient outer bloom aura
+        ctx.strokeStyle = theme.pathBloom || theme.pathGlow;
+        ctx.lineWidth = Math.max(4, cellSize * 0.65);
         ctx.stroke();
 
-        // Inner core line
-        ctx.strokeStyle = theme.path;
-        ctx.lineWidth = Math.max(2, cellSize * 0.24);
+        // Stage 2: Radiant laser aura
+        ctx.strokeStyle = theme.pathGlow;
+        ctx.lineWidth = Math.max(3, cellSize * 0.4);
         ctx.stroke();
+
+        // Stage 3: Vibrant core laser beam
+        ctx.strokeStyle = theme.path;
+        ctx.lineWidth = Math.max(2, cellSize * 0.22);
+        ctx.stroke();
+
+        // Stage 4: Laser-bright white-hot center
+        ctx.strokeStyle = theme.pathCore || '#ffffff';
+        ctx.lineWidth = Math.max(1, cellSize * 0.08);
+        ctx.stroke();
+
         ctx.restore();
       }
 

@@ -18,7 +18,16 @@ import {
 import { recursiveDivision, kruskal, prim, perlinTerrain, MazeGenerator } from './core/mazes';
 import { CanvasRenderer, InteractionHandler, BrushMode, getTheme } from './renderer';
 import { SimulationRunner, SimulationState, HistoryBuffer, TelemetryData } from './engine';
-import { ArenaManager, ARENA_PRESETS, AlgorithmType } from './ui';
+import { ArenaManager, ARENA_PRESETS, AlgorithmType, LearningModal } from './ui';
+import {
+  serializeState,
+  deserializeState,
+  buildShareUrl,
+  copyShareUrl,
+  applySerializedState,
+  loadPreset,
+  CHALLENGE_PRESETS,
+} from './core';
 
 export const APP_INFO = {
   name: 'Pathfinding Visualizer',
@@ -57,6 +66,30 @@ export function bootstrapApp() {
   const heuristicGroup = document.getElementById('heuristicGroup') as HTMLElement;
   const mazeSelect = document.getElementById('mazeSelect') as HTMLSelectElement;
   const themeSelect = document.getElementById('themeSelect') as HTMLSelectElement;
+
+  const btnShare = document.getElementById('btnShare') as HTMLButtonElement | null;
+  const btnHelp = document.getElementById('btnHelp') as HTMLButtonElement | null;
+  const presetChallengeSelect = document.getElementById('presetChallengeSelect') as HTMLSelectElement | null;
+  const toastElement = document.getElementById('toast') as HTMLElement | null;
+
+  // --- Animated Toast Alert Helper ---
+  let toastTimer: ReturnType<typeof setTimeout> | null = null;
+  function showToast(message: string, durationMs = 2800): void {
+    if (!toastElement) return;
+    toastElement.innerHTML = `<span class="toast-dot"></span><span>${message}</span>`;
+    toastElement.classList.add('show');
+    if (toastTimer !== null) {
+      clearTimeout(toastTimer);
+    }
+    toastTimer = setTimeout(() => {
+      toastElement.classList.remove('show');
+      toastTimer = null;
+    }, durationMs);
+  }
+
+  // --- Learning & Complexity Modal ---
+  const learningModal = new LearningModal();
+  btnHelp?.addEventListener('click', () => learningModal.open());
 
   const btnBrushWall = document.getElementById('btnBrushWall') as HTMLButtonElement;
   const btnBrushWeight = document.getElementById('btnBrushWeight') as HTMLButtonElement;
@@ -437,12 +470,55 @@ export function bootstrapApp() {
 
   interactionHandler.attach(canvas);
 
-  // Auto-center grid in canvas on startup
+  // --- State Restoration from URL Hash ---
+  function restoreStateFromHash(): boolean {
+    if (typeof window === 'undefined' || !window.location.hash) return false;
+    const restored = deserializeState(window.location.hash);
+    if (!restored) return false;
+
+    if (runner.isRunning) runner.pause();
+    runner.reset();
+
+    applySerializedState(restored, grid);
+    startCoord = restored.start;
+    targetCoord = restored.target;
+
+    if (restored.algorithm && algorithmSelect) {
+      algorithmSelect.value = restored.algorithm;
+      if (heuristicGroup) {
+        heuristicGroup.style.display =
+          restored.algorithm === 'astar' || restored.algorithm === 'jps' ? 'flex' : 'none';
+      }
+    }
+    if (restored.heuristic && heuristicSelect) {
+      heuristicSelect.value = restored.heuristic;
+    }
+
+    renderer.setEndpoints(startCoord, targetCoord);
+    renderer.render();
+
+    if (arenaManager.isArenaMode) {
+      arenaManager.setEndpoints(startCoord, targetCoord);
+      arenaManager.synchronizeRenderers();
+    }
+
+    showToast('✨ Shared pathfinding board loaded!');
+    return true;
+  }
+
+  // Auto-center grid in canvas on startup and restore saved state if hash present
   setTimeout(() => {
     renderer.resize();
     renderer.fitGrid(32);
-    renderer.render();
+    const restored = restoreStateFromHash();
+    if (!restored) {
+      renderer.render();
+    }
   }, 60);
+
+  window.addEventListener('hashchange', () => {
+    restoreStateFromHash();
+  });
 
   window.addEventListener('resize', () => {
     renderer.resize();
@@ -796,6 +872,71 @@ export function bootstrapApp() {
     renderer.render();
   });
 
+  // --- Share URL Generator & Copy ---
+  btnShare?.addEventListener('click', async () => {
+    try {
+      const algo = algorithmSelect?.value;
+      const heur = heuristicSelect?.value;
+      const shareUrl = buildShareUrl(grid, startCoord, targetCoord, algo, heur);
+
+      if (typeof window !== 'undefined' && window.history && window.history.replaceState) {
+        const hashPart = shareUrl.split('#')[1];
+        if (hashPart) {
+          window.history.replaceState(null, '', `#${hashPart}`);
+        }
+      }
+
+      const success = await copyShareUrl(shareUrl);
+      if (success) {
+        showToast('🔗 Board link copied to clipboard!');
+      } else {
+        showToast('📋 Link generated in address bar!');
+      }
+    } catch {
+      showToast('❌ Failed to copy share link.');
+    }
+  });
+
+  // --- Challenge Presets Selector ---
+  presetChallengeSelect?.addEventListener('change', () => {
+    const presetId = presetChallengeSelect.value;
+    if (!presetId) return;
+
+    if (runner.isRunning) runner.pause();
+    runner.reset();
+
+    const preset = CHALLENGE_PRESETS[presetId];
+    if (preset) {
+      const endpoints = loadPreset(presetId, grid);
+      startCoord = endpoints.start;
+      targetCoord = endpoints.target;
+
+      if (preset.recommendedAlgo && algorithmSelect) {
+        algorithmSelect.value = preset.recommendedAlgo;
+        if (heuristicGroup) {
+          heuristicGroup.style.display =
+            preset.recommendedAlgo === 'astar' || preset.recommendedAlgo === 'jps' ? 'flex' : 'none';
+        }
+      }
+      if (preset.recommendedHeuristic && heuristicSelect) {
+        heuristicSelect.value = preset.recommendedHeuristic;
+      }
+
+      renderer.setEndpoints(startCoord, targetCoord);
+      renderer.fitGrid(32);
+      renderer.render();
+
+      if (arenaManager.isArenaMode) {
+        arenaManager.setEndpoints(startCoord, targetCoord);
+        arenaManager.synchronizeRenderers();
+      }
+
+      showToast(`🧩 Challenge loaded: ${preset.name}!`);
+    }
+
+    presetChallengeSelect.selectedIndex = 0;
+  });
+
   // --- Keyboard Shortcuts ---
   window.addEventListener('keydown', (e) => {
     if (e.target instanceof HTMLInputElement || e.target instanceof HTMLSelectElement) return;
@@ -828,6 +969,14 @@ export function bootstrapApp() {
         break;
       case 'c':
         btnClearAll?.click();
+        break;
+      case '?':
+      case 'h':
+        e.preventDefault();
+        learningModal.toggle();
+        break;
+      case 'escape':
+        learningModal.close();
         break;
     }
   });

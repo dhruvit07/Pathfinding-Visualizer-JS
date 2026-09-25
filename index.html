@@ -36,6 +36,14 @@
         </div>
 
         <nav class="nav-links">
+          <button id="btnShare" class="btn btn-secondary btn-share" title="Generate Shareable URL Link (Copy to Clipboard)">
+            <span class="btn-icon">🔗</span>
+            <span>Share</span>
+          </button>
+          <button id="btnHelp" class="btn btn-secondary btn-help" title="Algorithm Learning Guide & Shortcuts (?)">
+            <span class="btn-icon">💡</span>
+            <span>Guide</span>
+          </button>
           <button id="btnToggleArena" class="btn btn-secondary btn-arena" title="Toggle Split-Screen Head-to-Head Arena">⚔️ Arena Mode</button>
           <a class="legacy-link" href="legacy-v1/index.html" title="Open the original college project">
             <span>🏛️</span>
@@ -75,6 +83,17 @@
             <option value="astar-vs-dijkstra">A* (Manhattan) vs Dijkstra</option>
             <option value="jps-vs-astar">Jump Point Search (JPS) vs A*</option>
             <option value="bfs-vs-bidirectional">BFS vs Bidirectional Search</option>
+          </select>
+        </div>
+
+        <div class="toolbar-group">
+          <label class="control-label" for="presetChallengeSelect">Challenge Puzzles</label>
+          <select id="presetChallengeSelect" class="styled-select">
+            <option value="" disabled selected>Pick Challenge...</option>
+            <option value="bottleneck">The Bottleneck</option>
+            <option value="spiral">Spiral Trap</option>
+            <option value="islandBridges">Island Bridges</option>
+            <option value="mountainPass">Mountain Pass</option>
           </select>
         </div>
 
@@ -256,6 +275,9 @@
         </div>
       </main>
     </div>
+
+    <!-- Animated Toast Notification Component -->
+    <div id="toast" class="toast-notification" aria-live="polite"></div>
 
     <script type="module" src="/src/main.ts"></script>
   </body>
