@@ -1,0 +1,18 @@
+# Dependencies
+node_modules/
+
+# Production build
+dist/
+
+# Test coverage
+coverage/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Vite / editor temp files
+*.local
+.DS_Store
+*.log
